@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Menú semanal">
+<meta name="theme-color" content="#d8432a">
+<title>Menú semanal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: cocina de casa, directo, sin adornos
+   IDEA: la libreta de menú pegada en la nevera + el modo guiado de un robot de cocina
+   PICTURE: la semana entera como lista de platos; el paso a paso a pantalla completa
+   COLOUR and TYPE: blanco, tinta, rojo tomate de acento, verde hoja de apoyo; Rubik
+   LAYOUT: una columna, barra inferior fija, modo cocina a pantalla completa */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141513);--card:light-dark(#f4f3f0,#1f211e);--ink:light-dark(#1b1d1a,#efeee9);--mute:light-dark(#62655e,#a3a69d);--line:light-dark(#e2e0db,#30332e);--acc:#d8432a;--acc2:light-dark(#4f7a33,#8fbf6a);--ok:light-dark(#4f7a33,#8fbf6a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Rubik,system-ui,sans-serif;overflow-x:clip;padding-bottom:84px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.wrap{max-width:640px;margin:0 auto;padding:16px max(4vw,16px)}
+header.top{background:var(--acc);color:#fff;padding:calc(18px + env(safe-area-inset-top)) max(4vw,16px) 22px}
+header.top .in{max-width:640px;margin:0 auto}
+.wk{display:flex;align-items:center;gap:8px}
+.wk h1{flex:1;margin:0;font-size:32px;line-height:1.05;font-weight:800;text-wrap:balance}
+.wk button{width:44px;height:44px;border-radius:50%;border:2px solid #ffffff88;background:transparent;color:#fff;font-size:20px}
+.sub{margin:6px 0 0;font-size:15px;opacity:.92}
+.stat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.stat div{background:#ffffff22;border-radius:12px;padding:8px 10px;font-size:13px;line-height:1.2}
+.stat b{display:block;font-size:20px;line-height:1.1;white-space:nowrap}
+.day{margin:14px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.day h2{margin:0;padding:10px 14px;font-size:15px;font-weight:700;background:var(--card);display:flex;justify-content:space-between}
+.day h2 span{color:var(--mute);font-weight:400}
+.dish{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.dish .k{font-size:13px;color:var(--mute);width:54px;flex:none}
+.dish .n{flex:1}.dish .n b{display:block;font-weight:500;line-height:1.25}.dish .n small{color:var(--mute);font-size:13px}
+.dish.done .n b{text-decoration:line-through;color:var(--mute)}
+.night{padding:10px 14px;border-top:1px dashed var(--line);font-size:14px;color:var(--acc2);font-weight:500}
+.go.big{width:100%;height:56px;margin:14px 0 4px;font-size:17px}
+#rs{width:100%;height:48px;font:inherit;font-size:16px;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);margin:6px 0 10px}
+.chips{display:flex;gap:8px;padding-bottom:6px;margin-bottom:6px}.chip{flex:none;height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg);white-space:nowrap}.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.srv{display:flex;align-items:center;gap:14px;margin:4px 0 8px}.srv b{font-size:22px;min-width:24px;text-align:center}
+.steps{padding-left:22px}.steps li{margin:0 0 10px}
+.mini{border:0;background:var(--card);border-radius:10px;width:28px;height:28px;font-size:12px;vertical-align:middle}
+.go{flex:none;height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--acc);color:#fff;font-weight:700}
+.dish.done .go{background:var(--ok)}
+h3{font-size:20px;margin:22px 0 8px}
+.sec{font-size:13px;color:var(--mute);margin:18px 0 6px;font-weight:500}
+.item{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);margin:6px 0;text-align:left}
+.box{width:26px;height:26px;border-radius:8px;border:2px solid var(--mute);flex:none;display:grid;place-items:center;color:#fff;font-size:16px}
+.item.on .box{background:var(--ok);border-color:var(--ok)}
+.item.on .nm{text-decoration:line-through;color:var(--mute)}
+.item .nm{flex:1}.item .q{color:var(--mute);font-size:14px;white-space:nowrap}
+.bar{height:10px;border-radius:5px;background:var(--card);overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:var(--acc2)}
+.row{padding:10px 0;border-bottom:1px solid var(--line)}
+.row .t{display:flex;justify-content:space-between;gap:8px}.row .t span{color:var(--mute);white-space:nowrap;font-size:14px}
+.tip{background:var(--card);border-radius:14px;padding:12px 14px;font-size:15px;margin:14px 0}
+.tip b{color:var(--acc)}
+.ghost{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:transparent}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.tabs button{flex:1;height:64px;border:0;background:transparent;font-size:13px;padding:0 2px;color:var(--mute);font-weight:500}
+nav.tabs button.on{color:var(--acc);font-weight:700;box-shadow:inset 0 3px 0 var(--acc)}
+/* modo cocina */
+#cook{position:fixed;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column}
+#cook.open{display:flex}
+.ch{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;border-bottom:1px solid var(--line)}
+.ch b{flex:1;line-height:1.2}
+.x{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:transparent;font-size:18px}
+.prog{height:6px;background:var(--card)}.prog i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.cb{flex:1;overflow:auto;padding:22px 20px;max-width:640px;width:100%;margin:0 auto}
+.stepn{font-size:14px;color:var(--acc);font-weight:700}
+.stept{font-size:clamp(24px,6.4vw,34px);line-height:1.25;font-weight:500;margin:10px 0 22px;text-wrap:pretty}
+.ings .item{min-height:48px}
+.tbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:64px;border-radius:18px;border:2px solid var(--acc);background:transparent;color:var(--acc);font-size:20px;font-weight:700}
+.cf{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);max-width:640px;width:100%;margin:0 auto}
+.cf button{flex:1;height:60px;border-radius:18px;font-size:18px;font-weight:700}
+.prev{border:1px solid var(--line);background:transparent}
+.next{border:0;background:var(--acc);color:#fff}
+#timer{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:20;display:none;align-items:center;gap:12px;background:var(--ink);color:var(--bg);padding:10px 12px 10px 18px;border-radius:30px;box-shadow:0 6px 24px #0004}
+#timer.show{display:flex}#timer b{font-size:26px;font-variant-numeric:tabular-nums}
+#timer.ring{background:var(--acc);color:#fff;animation:pul 1s infinite}
+#timer button{height:40px;padding:0 14px;border-radius:20px;border:0;background:#ffffff33;color:inherit;font-weight:700}
+@keyframes pul{50%{transform:translateX(-50%) scale(1.06)}}
+@media(prefers-reduced-motion:reduce){#timer.ring{animation:none}.prog i{transition:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="wk"><button id="pw" aria-label="Semana anterior">‹</button><h1 id="wt">Esta semana</h1><button id="nw" aria-label="Semana siguiente">›</button></div>
+  <p class="sub" id="wd"></p>
+  <div class="stat" id="st"></div>
+</div></header>
+<main class="wrap" id="view"></main>
+<nav class="tabs"><button data-t="menu" class="on">Menú</button><button data-t="domingo">Domingo</button><button data-t="recetas">Recetas</button><button data-t="compra">Compra</button><button data-t="sobras">Sobras</button></nav>
+
+<div id="cook" role="dialog" aria-modal="true">
+  <div class="ch"><b id="cn"></b><button class="x" id="cx" aria-label="Cerrar">✕</button></div>
+  <div class="prog"><i id="cp"></i></div>
+  <div class="cb" id="cbody"></div>
+  <div class="cf"><button class="prev" id="cprev">Atrás</button><button class="next" id="cnext">Siguiente</button></div>
+</div>
+<div id="timer"><b id="tt">0:00</b><span id="tl" style="font-size:13px;white-space:nowrap"></span><button id="tstop">Parar</button></div>
+
+<script>
+{
+// ---------- INGREDIENTES (compra fija semanal, 1 persona) ----------
+const ING={
+ pollo:{n:'Filetes pechuga de pollo',q:520,u:'g',b:'1 bandeja 520 g',s:'Carne',p:1},
+ picada:{n:'Carne picada mixta vacuno-cerdo',q:500,u:'g',b:'1 bandeja 500 g',s:'Carne',p:1},
+ merluza:{n:'Lomos y centros de merluza del Cabo Hacendado',q:400,u:'g',b:'1 bolsa 400 g',s:'Congelados',p:1},
+ huevo:{n:'Huevos M',q:12,u:'ud',b:'1 docena',s:'Huevos y lácteos',p:1},
+ queso:{n:'Queso rallado emmental Hacendado',q:200,u:'g',b:'200 g',s:'Huevos y lácteos',p:0},
+ esp:{n:'Espinaca en porciones Hacendado',q:450,u:'g',b:'1 bolsa 450 g',s:'Congelados',p:0},
+ lech:{n:'Cogollos de lechuga',q:3,u:'cogollo',b:'1 pack de 3',s:'Fruta y verdura',p:1},
+ tom:{n:'Tomate pera',q:3,u:'ud',b:'3 ud',s:'Fruta y verdura',p:1},
+ cal:{n:'Calabacín verde',q:2,u:'ud',b:'2 ud',s:'Fruta y verdura',p:1},
+ pr:{n:'Pimiento rojo',q:2,u:'ud',b:'2 ud',s:'Fruta y verdura',p:1},
+ pv:{n:'Pimiento verde freír',q:3,u:'ud',b:'3 ud',s:'Fruta y verdura',p:1},
+ zan:{n:'Zanahorias',q:8,u:'ud',b:'1 bolsa 1 kg',s:'Fruta y verdura',p:0},
+ ceb:{n:'Cebollas',q:6,u:'ud',b:'1 malla 1 kg',s:'Fruta y verdura',p:0},
+ champ:{n:'Champiñón laminado Hacendado',q:250,u:'g',b:'1 bandeja 250 g',s:'Fruta y verdura',p:1},
+ pat:{n:'Patatas',q:3000,u:'g',b:'1 malla 3 kg',s:'Fruta y verdura',p:0},
+ ajo:{n:'Ajos',q:10,u:'dientes',b:'1 cabeza',s:'Fruta y verdura',p:0},
+ tomt:{n:'Tomate triturado Hacendado',q:800,u:'g',b:'2 botes 400 g',s:'Despensa',p:0},
+ garb:{n:'Garbanzo cocido Hacendado',q:2,u:'bote',b:'2 botes',s:'Despensa',p:0},
+ lent:{n:'Lenteja cocida Hacendado',q:1,u:'bote',b:'1 bote',s:'Despensa',p:0},
+ atun:{n:'Atún claro en aceite de girasol Hacendado',q:360,u:'g',b:'360 g',s:'Despensa',p:0},
+ arroz:{n:'Arroz redondo Hacendado',q:1000,u:'g',b:'1 kg',s:'Despensa',p:0},
+ pasta:{n:'Macarrón Hacendado',q:500,u:'g',b:'500 g',s:'Despensa',p:0}
+};
+// precio aprox. Mercadona (€ por el formato de compra) y kcal por unidad de receta
+const PR={pollo:4,picada:4.1,merluza:4.9,huevo:3,queso:1.6,esp:.9,lech:1.05,tom:.75,cal:1.56,pr:1.68,pv:.69,zan:1,ceb:2,champ:1.8,pat:4.65,ajo:.4,tomt:1.1,garb:1.6,lent:.9,atun:4.2,arroz:1.15,pasta:.8};
+const EST={ajo:1};
+const KC={pollo:1.1,picada:2.4,merluza:.7,huevo:75,queso:3.9,esp:.23,lech:20,tom:30,cal:50,pr:50,pv:30,zan:30,ceb:60,champ:.25,pat:.8,ajo:4,tomt:.35,garb:300,lent:230,atun:2,arroz:3.55,pasta:3.6};
+const OIL={r1:3,r2:1,r3:2,r4:1.5,r5:1.5,r6:1.5,r7:1.5,r8:1,r9:3,r10:1,r11:2,r12:2,r13:1.5,r14:1,r15:1,r16:1.5,r17:1,r18:1.5,r19:1,r20:2,r21:1,r22:3,r23:1.5,r24:1.5,r25:1.5,r26:1.5};
+const OIL_EUR=.04; // 1 cucharada (10 ml) de aceite de oliva a ~3,95 €/l
+const DESPENSA_SEM=1.5;
+const ALWAYS='Aceite de oliva, sal, pimienta, pimentón, comino, orégano, vinagre, pastillas de caldo, azúcar.';
+const URG={lech:3,champ:3,tom:2,cal:1,pr:1,pv:1};
+
+// ---------- RECETAS (1 ración) t: c=comida n=cena a=ambas ----------
+const R=[
+{id:'r1',n:'Pollo al ajillo con patatas',t:'c',m:35,i:{pollo:200,pat:250,ajo:3},p:[
+['Pela 250 g de patata y córtala en rodajas finas. Sálala.'],
+['Calienta 3 cucharadas de aceite en una sartén a fuego medio. Fríe las patatas tapadas, moviendo de vez en cuando.',900],
+['Saca las patatas. Corta 200 g de pollo en tacos y salpimienta.'],
+['Lamina 3 dientes de ajo. Dora el pollo a fuego fuerte con un chorro de aceite.',360],
+['Añade el ajo y baja el fuego para que no se queme.',120],
+['Vuelve a echar las patatas, mezcla y sirve.',60]]},
+{id:'r2',n:'Pollo a la plancha con ensalada',t:'a',m:15,i:{pollo:200,lech:1,tom:1,ceb:.5},p:[
+['Filetea fino 200 g de pollo. Salpimienta y pon orégano.'],
+['Plancha muy caliente con unas gotas de aceite. Pon el pollo.',240],
+['Dale la vuelta.',180],
+['Corta 1 cogollo, 1 tomate y ½ cebolla en juliana.'],
+['Aliña con aceite, vinagre y sal. Sirve con el pollo.']]},
+{id:'r3',n:'Arroz con pollo y verduras',t:'c',m:40,i:{arroz:100,pollo:150,pr:.5,pv:.5,ceb:.5,ajo:1,zan:1},p:[
+['Pica ½ cebolla, ½ pimiento rojo, ½ pimiento verde, 1 zanahoria y 1 diente de ajo.'],
+['Corta 150 g de pollo en tacos y dóralo en una cazuela con 2 cucharadas de aceite.',300],
+['Añade las verduras y sofríe a fuego medio.',480],
+['Echa 1 cucharadita de pimentón y 100 g de arroz. Remueve.',60],
+['Añade 300 ml de agua caliente y ½ pastilla de caldo. Fuego medio, sin remover.',1080],
+['Apaga, tapa con un paño y deja reposar.',300]]},
+{id:'r4',n:'Pollo con champiñones y arroz',t:'c',m:30,i:{pollo:200,champ:125,ceb:.5,ajo:2,arroz:80},p:[
+['Pon a cocer 80 g de arroz en agua hirviendo con sal. Activa el temporizador y sigue con lo demás.',1020],
+['Pica ½ cebolla y 2 dientes de ajo. Corta 200 g de pollo en tiras.'],
+['Dora el pollo en una sartén con aceite y sácalo.',300],
+['En la misma sartén pocha la cebolla y el ajo.',300],
+['Añade 125 g de champiñón y saltea.',300],
+['Vuelve a echar el pollo, un chorro de agua y ¼ de pastilla de caldo. Deja reducir.',240],
+['Escurre el arroz y sirve todo junto.']]},
+{id:'r5',n:'Bol de pollo con pimientos',t:'a',m:25,i:{pollo:180,pr:.5,pv:.5,ceb:.5,arroz:80},p:[
+['Pon a cocer 80 g de arroz en agua hirviendo con sal.',1020],
+['Corta en tiras 180 g de pollo, ½ pimiento rojo, ½ pimiento verde y ½ cebolla.'],
+['Saltea las verduras a fuego fuerte con aceite.',360],
+['Añade el pollo con comino, pimentón y sal.',360],
+['Escurre el arroz, ponlo en un bol y el salteado encima.']]},
+{id:'r6',n:'Macarrones a la boloñesa',t:'c',m:30,i:{pasta:125,picada:150,tomt:200,ceb:.5,ajo:1,zan:1,queso:30},p:[
+['Pica ½ cebolla, 1 zanahoria y 1 diente de ajo.'],
+['Sofríe la verdura con 2 cucharadas de aceite.',360],
+['Añade 150 g de carne picada y deshazla con la cuchara hasta que cambie de color.',300],
+['Echa 200 g de tomate triturado, sal, orégano y una pizca de azúcar. Fuego bajo.',900],
+['Mientras, cuece 125 g de macarrones en agua con sal.',600],
+['Escurre, mezcla con la salsa y pon 30 g de queso rallado.']]},
+{id:'r7',n:'Albóndigas en salsa con patatas',t:'c',m:45,i:{picada:200,huevo:1,tomt:200,ceb:.5,ajo:1,pat:200},p:[
+['Mezcla 200 g de picada con 1 huevo, sal, pimienta y 1 diente de ajo picado. Haz 8 bolas.'],
+['Dóralas en una sartén con aceite por todos lados. Sácalas.',360],
+['Pica ½ cebolla y pochala en la misma sartén.',360],
+['Pela 200 g de patata y córtala en dados. Ponla a cocer en agua con sal.'],
+['Añade a la sartén 200 g de tomate triturado y 100 ml de agua. Mete las albóndigas. Fuego bajo.',900],
+['Escurre las patatas y sírvelas con las albóndigas.']]},
+{id:'r8',n:'Pimiento relleno de carne',t:'c',m:50,i:{picada:150,pr:1,arroz:50,tomt:100,ceb:.5,queso:30},p:[
+['Enciende el horno a 200 °C. Cuece 50 g de arroz en agua con sal.',900],
+['Corta la tapa de 1 pimiento rojo y quítale las semillas.'],
+['Pica ½ cebolla y sofríela. Añade 150 g de picada y dórala.',480],
+['Añade 100 g de tomate triturado y el arroz escurrido. Sal y orégano.',180],
+['Rellena el pimiento, pon 30 g de queso encima y al horno.',1800],
+['Deja templar y sirve.',180]]},
+{id:'r9',n:'Tortilla de patatas',t:'a',m:35,i:{huevo:3,pat:300,ceb:.5},p:[
+['Pela 300 g de patata y córtala en láminas finas. Pica ½ cebolla.'],
+['Fríe patata y cebolla en abundante aceite a fuego medio-bajo, que se poche sin dorar.',1200],
+['Escurre el aceite. Bate 3 huevos con sal y mézclalos con la patata. Reposa.',120],
+['Sartén pequeña con 1 cucharada de aceite a fuego medio. Cuaja la primera cara.',180],
+['Dale la vuelta con un plato y cuaja la otra cara.',120]]},
+{id:'r10',n:'Revuelto de espinacas y champiñones',t:'n',m:12,i:{huevo:2,esp:150,champ:125,ajo:1},p:[
+['Lamina 1 diente de ajo y dóralo en una sartén con aceite.',60],
+['Añade 125 g de champiñón y saltea.',300],
+['Añade 150 g de espinacas congeladas (3 porciones) y deja que se descongelen y suelten el agua.',240],
+['Echa 2 huevos batidos con sal. Remueve a fuego bajo hasta que cuajen jugosos.',90]]},
+{id:'r11',n:'Tortilla de calabacín',t:'n',m:20,i:{huevo:3,cal:1,ceb:.5},p:[
+['Corta 1 calabacín en dados pequeños y pica ½ cebolla.'],
+['Pocha en una sartén con 2 cucharadas de aceite y sal.',600],
+['Bate 3 huevos con sal y mezcla con la verdura.'],
+['Cuaja a fuego medio la primera cara.',180],
+['Dale la vuelta con un plato y cuaja la otra.',120]]},
+{id:'r12',n:'Merluza al horno con patatas',t:'c',m:40,i:{merluza:200,pat:250,ceb:.5,ajo:1},p:[
+['La noche antes: pasa 200 g de merluza del congelador a la nevera. Enciende el horno a 200 °C.'],
+['Corta 250 g de patata en rodajas finas y ½ cebolla en juliana. Sal, aceite y a la bandeja del horno.',1200],
+['Pon encima la merluza salpimentada.',720],
+['Mientras, dora 1 diente de ajo laminado en aceite. Apaga y añade una pizca de pimentón.'],
+['Echa el aceite con ajo por encima del pescado y sirve.']]},
+{id:'r13',n:'Merluza a la plancha con verduras',t:'n',m:20,i:{merluza:200,cal:.5,pv:.5,zan:1},p:[
+['La noche antes: pasa 200 g de merluza a la nevera. Sécala con papel.'],
+['Corta en bastones ½ calabacín, ½ pimiento verde y 1 zanahoria.'],
+['Saltea las verduras con aceite y sal a fuego fuerte.',420],
+['Plancha caliente con aceite. Merluza por el lado de la piel.',240],
+['Dale la vuelta.',120],
+['Sirve con las verduras y un chorro de aceite en crudo.']]},
+{id:'r14',n:'Garbanzos con espinacas',t:'c',m:20,i:{garb:1,esp:150,ajo:2,tomt:100,ceb:.5},p:[
+['Lava y escurre 1 bote de garbanzos.'],
+['Pica ½ cebolla y 2 dientes de ajo. Sofríe en una cazuela.',360],
+['Añade 1 cucharadita de pimentón, una pizca de comino y 100 g de tomate triturado.',180],
+['Echa 150 g de espinacas congeladas (3 porciones) y deja que se descongelen.',300],
+['Añade los garbanzos y 100 ml de agua. Hierve suave.',480]]},
+{id:'r15',n:'Lentejas exprés',t:'c',m:30,i:{lent:1,zan:1,pat:150,pv:.5,ceb:.5,ajo:1,tomt:100},p:[
+['Pica ½ cebolla, ½ pimiento verde, 1 diente de ajo y 1 zanahoria. Pela y trocea 150 g de patata.'],
+['Sofríe la verdura picada en una cazuela con aceite.',420],
+['Añade 1 cucharadita de pimentón y 100 g de tomate triturado.',120],
+['Añade la patata, 400 ml de agua y ½ pastilla de caldo.',900],
+['Añade 1 bote de lentejas lavadas. Hierve suave.',300]]},
+{id:'r16',n:'Ensalada de garbanzos y atún',t:'a',m:10,i:{garb:1,atun:80,tom:1,pr:.5,lech:1},p:[
+['Lava y escurre 1 bote de garbanzos.'],
+['Corta 1 cogollo, 1 tomate y ½ pimiento rojo en trozos pequeños.'],
+['Mezcla todo con 80 g de atún escurrido.'],
+['Aliña con aceite, vinagre, sal y comino.']]},
+{id:'r17',n:'Macarrones con atún y tomate',t:'c',m:20,i:{pasta:125,atun:80,tomt:150,ceb:.5,queso:30},p:[
+['Cuece 125 g de macarrones en agua con sal.',600],
+['Pica ½ cebolla y pochala en una sartén con aceite.',360],
+['Añade 150 g de tomate triturado, sal, orégano y una pizca de azúcar.',300],
+['Añade 80 g de atún escurrido.'],
+['Escurre la pasta, mézclala con la salsa y pon 30 g de queso.']]},
+{id:'r18',n:'Ensalada completa con huevo y atún',t:'n',m:15,i:{lech:1,tom:1,atun:80,huevo:2,zan:1},p:[
+['Cuece 2 huevos en agua hirviendo.',600],
+['Pásalos a agua fría y pélalos.'],
+['Corta 1 cogollo y 1 tomate. Ralla 1 zanahoria.'],
+['Añade los huevos en cuartos y 80 g de atún escurrido.'],
+['Aliña con aceite, vinagre y sal.']]},
+{id:'r19',n:'Crema de calabacín',t:'n',m:30,i:{cal:1,pat:150,ceb:.5,queso:30},p:[
+['Trocea 1 calabacín, 150 g de patata y ½ cebolla.'],
+['Rehoga la cebolla en una olla con aceite.',240],
+['Añade calabacín, patata, ½ pastilla de caldo y agua justo hasta cubrir.',1200],
+['Añade 30 g de queso y tritura (batidora o la Mambo). Ajusta de sal.']]},
+{id:'r20',n:'Pisto con huevo',t:'a',m:35,i:{cal:1,pr:.5,pv:.5,ceb:1,tomt:150,huevo:2,ajo:1},p:[
+['Pica 1 cebolla, 1 diente de ajo, ½ pimiento rojo y ½ verde. Corta 1 calabacín en dados.'],
+['Pocha cebolla, ajo y pimientos en una sartén con aceite.',600],
+['Añade el calabacín.',480],
+['Añade 150 g de tomate triturado, sal y una pizca de azúcar.',600],
+['Haz 2 huecos, casca 2 huevos dentro y tapa hasta que cuaje la clara.',240]]},
+{id:'r21',n:'Crema de zanahoria',t:'n',m:30,i:{zan:3,pat:150,ceb:.5},p:[
+['Pela y trocea 3 zanahorias, 150 g de patata y ½ cebolla.'],
+['Rehoga la cebolla en una olla con aceite.',240],
+['Añade zanahoria, patata, ½ pastilla de caldo, una pizca de comino y agua hasta cubrir.',1200],
+['Tritura (batidora o la Mambo). Un chorro de aceite crudo por encima.']]},
+{id:'r22',n:'Patatas a lo pobre con huevo',t:'c',m:30,i:{pat:300,pv:1,ceb:.5,huevo:2,ajo:2},p:[
+['Corta 300 g de patata en rodajas, 1 pimiento verde en tiras y ½ cebolla en juliana. Pica 2 dientes de ajo.'],
+['Fríe todo en abundante aceite a fuego medio-bajo, tapado.',1200],
+['Escurre y deja en la sartén con un poco de aceite. Haz 2 huecos.'],
+['Casca 2 huevos dentro y tapa hasta que cuajen.',240]]},
+{id:'r23',n:'Arroz tres delicias casero',t:'a',m:25,i:{arroz:100,huevo:1,zan:1,pollo:100,pv:.5},p:[
+['Cuece 100 g de arroz en agua con sal.',1020],
+['Pica 1 zanahoria y ½ pimiento verde muy pequeño. Corta 100 g de pollo en dados.'],
+['Haz 1 huevo en tortilla fina, sácalo y córtalo en tiras.',90],
+['Saltea el pollo y la verdura a fuego fuerte.',360],
+['Añade el arroz escurrido y la tortilla. Saltea con sal (o soja si tienes).',120]]},
+{id:'r24',n:'Pasta con calabacín y champiñones',t:'c',m:20,i:{pasta:125,cal:1,champ:125,ajo:1,queso:30},p:[
+['Cuece 125 g de macarrones en agua con sal.',600],
+['Corta 1 calabacín en dados y lamina 1 diente de ajo.'],
+['Dora el ajo, añade el calabacín y 125 g de champiñón. Saltea con sal.',420],
+['Escurre la pasta, mezcla y pon 30 g de queso.']]},
+{id:'r25',n:'Hamburguesa casera con ensalada',t:'a',m:20,i:{picada:150,ceb:.5,lech:1,tom:1},p:[
+['Mezcla 150 g de picada con sal y pimienta. Haz 1 hamburguesa gruesa.'],
+['Plancha muy caliente. Primer lado.',240],
+['Dale la vuelta.',180],
+['Corta 1 cogollo, 1 tomate y ½ cebolla.'],
+['Aliña la ensalada y sirve con la hamburguesa.']]},
+{id:'r26',n:'Merluza en tomate con arroz',t:'c',m:30,i:{merluza:200,tomt:150,ceb:.5,ajo:1,arroz:80},p:[
+['La noche antes: pasa 200 g de merluza a la nevera. Pon a cocer 80 g de arroz en agua con sal.',1020],
+['Pica ½ cebolla y 1 diente de ajo. Pocha en una sartén con aceite.',360],
+['Añade 150 g de tomate triturado, sal, orégano y una pizca de azúcar.',300],
+['Mete la merluza en trozos dentro de la salsa y tapa.',360],
+['Escurre el arroz y sirve con la merluza por encima.']]}
+];
+
+// ---------- COCINAR EL DOMINGO ----------
+// m: full = se cocina entero el domingo y entre semana solo se calienta
+//    part = el domingo se deja la base y el día se termina en pocos minutos
+//    fresh = se prepara el mismo día (ensaladas, plancha)
+// fz: 1 se puede congelar · raw: carne cruda (nevera solo lunes y martes)
+// A/P/H: gramos de arroz, gramos de pasta y huevos duros que salen de la cocción común del domingo
+const MICRO=['Microondas tapado con un chorrito de agua. Remueve a mitad.',180];
+const BC={
+r1:{m:'full',fz:0,dom:'p',dia:[['Calienta en una sartén con unas gotas de aceite (mejor que en el micro: la patata no queda blanda).',300]]},
+r2:{m:'fresh',fz:1,raw:1,dom:[['Filetea 200 g de pollo. Salpimienta, pon orégano y guárdalo en un táper.']],dia:[['Plancha muy caliente con unas gotas de aceite. Pon el pollo.',240],['Dale la vuelta.',180],['Corta 1 cogollo, 1 tomate y ½ cebolla. Aliña con aceite, vinagre y sal.']]},
+r3:{m:'full',fz:1,dom:'p',dia:[MICRO]},
+r4:{m:'full',fz:1,A:80,dom:[['Pica ½ cebolla y 2 dientes de ajo. Corta 200 g de pollo en tiras.'],['Dora el pollo en una sartén con aceite y sácalo.',300],['En la misma sartén pocha la cebolla y el ajo.',300],['Añade 125 g de champiñón y saltea.',300],['Vuelve a echar el pollo, un chorro de agua y ¼ de pastilla de caldo. Deja reducir.',240],['Pon en el táper 80 g del arroz cocido y el pollo encima.']],dia:[MICRO]},
+r5:{m:'full',fz:1,A:80,dom:[['Corta en tiras 180 g de pollo, ½ pimiento rojo, ½ pimiento verde y ½ cebolla.'],['Saltea las verduras a fuego fuerte con aceite.',360],['Añade el pollo con comino, pimentón y sal.',360],['Pon en el táper 80 g del arroz cocido y el salteado encima.']],dia:[MICRO]},
+r6:{m:'full',fz:1,P:125,dom:[['Pica ½ cebolla, 1 zanahoria y 1 diente de ajo.'],['Sofríe la verdura con 2 cucharadas de aceite.',360],['Añade 150 g de carne picada y deshazla con la cuchara hasta que cambie de color.',300],['Echa 200 g de tomate triturado, sal, orégano y una pizca de azúcar. Fuego bajo.',900],['Mezcla la salsa con 125 g de los macarrones cocidos y pon 30 g de queso por encima.']],dia:[MICRO]},
+r7:{m:'full',fz:0,dom:'p',dia:[MICRO]},
+r8:{m:'full',fz:1,A:50,dom:[['Enciende el horno a 200 °C. Corta la tapa de 1 pimiento rojo y quítale las semillas.'],['Pica ½ cebolla y sofríela. Añade 150 g de picada y dórala.',480],['Añade 100 g de tomate triturado y 50 g del arroz cocido. Sal y orégano.',180],['Rellena el pimiento, pon 30 g de queso encima y al horno.',1800]],dia:[['Microondas tapado, o 10 minutos de horno si lo tienes encendido.',180]]},
+r9:{m:'full',fz:0,dom:'p',dia:[['Cómela fría o dale 1 minuto de microondas.',60]]},
+r10:{m:'part',fz:1,dom:[['Lamina 1 diente de ajo y dóralo en una sartén con aceite.',60],['Añade 125 g de champiñón y saltea.',300],['Añade 150 g de espinacas congeladas (3 porciones) y deja que suelten el agua.',240]],dia:[['Calienta el sofrito de espinacas en una sartén con unas gotas de aceite.',120],['Echa 2 huevos batidos con sal. Remueve a fuego bajo hasta que cuajen jugosos.',90]]},
+r11:{m:'part',fz:1,dom:[['Corta 1 calabacín en dados pequeños y pica ½ cebolla.'],['Pocha en una sartén con 2 cucharadas de aceite y sal.',600]],dia:[['Bate 3 huevos con sal y mézclalos con la verdura del táper.'],['Sartén pequeña con aceite a fuego medio. Cuaja la primera cara.',180],['Dale la vuelta con un plato y cuaja la otra.',120]]},
+r12:{m:'part',fz:0,dom:[['Enciende el horno a 200 °C. Corta 250 g de patata en rodajas finas y ½ cebolla en juliana. Sal, aceite y a la bandeja.',1200]],dia:[['Calienta las patatas del táper en el microondas.',120],['Dora 1 diente de ajo laminado en una sartén con aceite. Pon la merluza (ya descongelada) salpimentada por el lado de la piel.',240],['Dale la vuelta, añade una pizca de pimentón y sírvela encima de las patatas.',180]]},
+r13:{m:'part',fz:1,dom:[['Corta en bastones ½ calabacín, ½ pimiento verde y 1 zanahoria.'],['Saltea las verduras con aceite y sal a fuego fuerte.',420]],dia:[['Seca la merluza (ya descongelada) con papel. Plancha caliente con aceite, por el lado de la piel.',240],['Dale la vuelta y calienta las verduras en la misma plancha.',150],['Sirve con un chorro de aceite en crudo.']]},
+r14:{m:'full',fz:1,dom:'p',dia:[MICRO]},
+r15:{m:'full',fz:1,dom:'p',dia:[MICRO]},
+r16:{m:'fresh',dom:null,dia:'p'},
+r17:{m:'full',fz:1,P:125,dom:[['Pica ½ cebolla y pochala en una sartén con aceite.',360],['Añade 150 g de tomate triturado, sal, orégano y una pizca de azúcar.',300],['Añade 80 g de atún escurrido.'],['Mezcla con 125 g de los macarrones cocidos y pon 30 g de queso.']],dia:[MICRO]},
+r18:{m:'fresh',H:2,dom:null,dia:[['Pela 2 de los huevos duros del domingo.'],['Corta 1 cogollo y 1 tomate. Ralla 1 zanahoria.'],['Añade los huevos en cuartos y 80 g de atún escurrido.'],['Aliña con aceite, vinagre y sal.']]},
+r19:{m:'full',fz:1,dom:'p',dia:[MICRO]},
+r20:{m:'part',fz:1,dom:[['Pica 1 cebolla, 1 diente de ajo, ½ pimiento rojo y ½ verde. Corta 1 calabacín en dados.'],['Pocha cebolla, ajo y pimientos en una sartén con aceite.',600],['Añade el calabacín.',480],['Añade 150 g de tomate triturado, sal y una pizca de azúcar.',600]],dia:[['Calienta el pisto en una sartén.',180],['Haz 2 huecos, casca 2 huevos dentro y tapa hasta que cuaje la clara.',240]]},
+r21:{m:'full',fz:1,dom:'p',dia:[MICRO]},
+r22:{m:'part',fz:0,dom:[['Corta 300 g de patata en rodajas, 1 pimiento verde en tiras y ½ cebolla en juliana. Pica 2 dientes de ajo.'],['Fríe todo en abundante aceite a fuego medio-bajo, tapado.',1200],['Escurre bien el aceite.']],dia:[['Calienta las patatas en una sartén con unas gotas de aceite. Haz 2 huecos.',180],['Casca 2 huevos dentro y tapa hasta que cuajen.',240]]},
+r23:{m:'full',fz:1,A:100,dom:[['Pica 1 zanahoria y ½ pimiento verde muy pequeño. Corta 100 g de pollo en dados.'],['Haz 1 huevo en tortilla fina, sácalo y córtalo en tiras.',90],['Saltea el pollo y la verdura a fuego fuerte.',360],['Añade 100 g del arroz cocido y la tortilla. Saltea con sal.',120]],dia:[['Sartén caliente con unas gotas de aceite, o microondas tapado.',180]]},
+r24:{m:'full',fz:1,P:125,dom:[['Corta 1 calabacín en dados y lamina 1 diente de ajo.'],['Dora el ajo, añade el calabacín y 125 g de champiñón. Saltea con sal.',420],['Mezcla con 125 g de los macarrones cocidos y pon 30 g de queso.']],dia:[MICRO]},
+r25:{m:'fresh',fz:1,raw:1,dom:[['Mezcla 150 g de picada con sal y pimienta. Forma 1 hamburguesa gruesa y guárdala en un táper con papel de horno.']],dia:[['Plancha muy caliente. Primer lado.',240],['Dale la vuelta.',180],['Corta 1 cogollo, 1 tomate y ½ cebolla. Aliña y sirve.']]},
+r26:{m:'part',fz:1,A:80,dom:[['Pica ½ cebolla y 1 diente de ajo. Pocha en una sartén con aceite.',360],['Añade 150 g de tomate triturado, sal, orégano y una pizca de azúcar.',300],['Guarda la salsa en el táper con 80 g del arroz cocido al lado.']],dia:[['Calienta la salsa en una sartén. Mete la merluza (ya descongelada) en trozos y tapa.',360],['Calienta el arroz en el microondas y sirve la merluza encima.',90]]}
+};
+const domSteps=r=>{const b=BC[r.id];return b.dom==='p'?r.p:(b.dom||[])};
+const diaSteps=r=>{const b=BC[r.id];return b.dia==='p'?r.p:b.dia};
+const noFreeze=r=>BC[r.id].m!=='fresh'&&BC[r.id].fz===0;
+const needsDom=r=>domSteps(r).length>0;
+// dónde se guarda lo del domingo según el día (0 = lunes)
+const store=(r,d)=>{const b=BC[r.id];if(!needsDom(r))return 'dia';if(b.raw)return d<=1?'nevera':'congelador';return d<=2?'nevera':(b.fz?'congelador':'nevera')};
+const weekMin=r=>Math.max(2,Math.round(diaSteps(r).reduce((s,x)=>s+(x[1]||60),0)/60)+1);
+const thaw=(r,d)=>store(r,d)==='congelador'||!!r.i.merluza;
+
+// ---------- UTILIDADES ----------
+const $=s=>document.querySelector(s);
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DAYS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const fmt=q=>{q=Math.round(q*4)/4;const w=Math.floor(q),f=q-w;const fr=f===.75?'¾':f===.5?'½':f===.25?'¼':'';return (w?w:(fr?'':'0'))+fr};
+const qty=(id,q)=>{const u=ING[id].u;return u==='g'?`${Math.round(q)} g`:`${fmt(q)} ${u}${u==='ud'?'':(q>1?'s':'')}`.replace('dientess','dientes')};
+const monday=d=>{d=new Date(d.getFullYear(),d.getMonth(),d.getDate());const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return d};
+const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const hash=s=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0};
+const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const shuffle=(a,r)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const kcal=r=>Math.round((Object.entries(r.i).reduce((s,[id,q])=>s+q*KC[id],0)+OIL[r.id]*90)/10)*10;
+const cost=r=>Object.entries(r.i).reduce((s,[id,q])=>s+q/ING[id].q*PR[id],0)+OIL[r.id]*OIL_EUR;
+const eur=v=>v.toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const COMPRA=Object.values(PR).reduce((a,b)=>a+b,0);
+const STOCK=Object.fromEntries(Object.entries(ING).map(([k,v])=>[k,v.q]));
+
+// ---------- PLANIFICADOR ----------
+function build(k,avoid){
+  const r=rng(hash(k));let best=null,bs=-1e9;
+  for(let t=0;t<1500;t++){
+    const st={...STOCK},C=[],N=[];
+    for(const x of shuffle(R.slice(),r)){
+      if(C.length>=7&&N.length>=7)break;
+      if(Object.entries(x.i).some(([id,q])=>st[id]<q-1e-9))continue;
+      let s=null;
+      if(x.t==='c')s=C.length<7?C:null;
+      else if(x.t==='n')s=N.length<7?N:null;
+      else s=(C.length<=N.length?(C.length<7?C:N.length<7?N:null):(N.length<7?N:C.length<7?C:null));
+      if(!s)continue;
+      if(noFreeze(x)&&s.filter(noFreeze).length>=3)continue;
+      for(const[id,q]of Object.entries(x.i))st[id]-=q;
+      s.push(x);
+    }
+    let sc=(C.length+N.length)*10;
+    for(const id in ING)sc+=(STOCK[id]-st[id])/STOCK[id]*(ING[id].p?(URG[id]?6:3):.2);
+    if(avoid)sc-=[...C,...N].filter(x=>avoid.has(x.id)).length*.8;
+    if(sc>bs){bs=sc;best={C,N,st}}
+  }
+  const urg=x=>Math.max(0,...Object.keys(x.i).map(id=>URG[id]||0))+(x.i.merluza?-1:0);
+  const key2=x=>(noFreeze(x)?10:0)+urg(x);best.C.sort((a,b)=>key2(b)-key2(a));best.N.sort((a,b)=>key2(b)-key2(a));
+  return best;
+}
+const cache={};
+function plan(k){
+  if(cache[k])return cache[k];
+  const d=new Date(k);d.setDate(d.getDate()-7);
+  const prev=build(key(d),null);
+  return cache[k]=build(k,new Set([...prev.C,...prev.N].map(x=>x.id)));
+}
+
+// ---------- RECETARIO (recetas propias, menaje normal) ----------
+// i: [cantidad por la receta base, unidad, ingrediente] · b: raciones base · k: kcal por ración (aprox.) · u: menaje
+// En los pasos, {n} se sustituye por la cantidad ajustada del ingrediente n
+const RB=[
+{id:'b1',n:'Lentejas estofadas',c:'Legumbres',b:2,m:50,k:520,u:'Olla grande',i:[[160,'g','Lenteja pardina seca'],[80,'g','Chorizo'],[250,'g','Patata'],[1,'ud','Zanahoria'],[.5,'ud','Cebolla'],[.5,'ud','Pimiento verde'],[2,'diente','Ajo'],[100,'g','Tomate triturado'],[1,'cdta','Pimentón dulce'],[1,'hoja','Laurel'],[2,'cda','Aceite de oliva'],[1000,'ml','Agua']],p:[
+['Lava {0} en un colador con agua fría.'],['Pica {4}, {5}, {6} y {3} en trozos pequeños.'],['Calienta {10} en la olla a fuego medio y sofríe la verdura.',480],['Añade {8} y {7}. Remueve.',120],['Echa las lentejas, {1} en rodajas, {9} y {11}. Cuando hierva, baja a fuego medio-bajo y tapa.',1800],['Añade {2} pelada y chascada en trozos. Sala y sigue a fuego suave.',900],['Apaga y deja reposar tapado.',300]]},
+{id:'b2',n:'Garbanzos con espinacas',c:'Legumbres',b:2,m:25,k:430,u:'Cazuela, mortero o batidora',i:[[400,'g','Garbanzos cocidos (bote)'],[200,'g','Espinacas frescas o congeladas'],[3,'diente','Ajo'],[1,'ud','Rebanada de pan del día anterior'],[1,'cdta','Pimentón dulce'],[1,'cdta','Comino molido'],[1,'cda','Vinagre'],[3,'cda','Aceite de oliva'],[150,'ml','Agua']],p:[
+['Lava y escurre {0}.'],['Fríe {2} laminados y el pan en {7} hasta que se doren. Sácalos.',180],['Rehoga {1} en la misma cazuela.',240],['Machaca el ajo y el pan con {4}, {5} y {6} en el mortero (o con la batidora).'],['Añade a la cazuela los garbanzos, el majado y {8}. Sala y deja a fuego suave.',480]]},
+{id:'b3',n:'Alubias blancas con verduras',c:'Legumbres',b:2,m:25,k:420,u:'Cazuela',i:[[400,'g','Alubias blancas cocidas (bote)'],[1,'ud','Zanahoria'],[.5,'ud','Cebolla'],[.5,'ud','Pimiento rojo'],[.5,'ud','Calabacín'],[2,'diente','Ajo'],[100,'g','Tomate triturado'],[1,'cdta','Pimentón dulce'],[2,'cda','Aceite de oliva'],[300,'ml','Caldo de verduras']],p:[
+['Pica {1}, {2}, {3}, {4} y {5}.'],['Sofríe la verdura en la cazuela con {8}.',600],['Añade {6} y {7}.',180],['Echa {0} lavadas y {9}. Fuego suave.',600],['Prueba de sal y deja reposar.',120]]},
+{id:'b4',n:'Fabada rápida',c:'Legumbres',b:2,m:40,k:650,u:'Olla',i:[[400,'g','Fabes o alubias blancas cocidas (bote)'],[1,'ud','Chorizo asturiano'],[1,'ud','Morcilla asturiana'],[100,'g','Panceta'],[.5,'ud','Cebolla'],[1,'cdta','Pimentón dulce'],[1,'pizca','Azafrán o colorante'],[500,'ml','Agua']],p:[
+['Pon en la olla el chorizo, la morcilla, {3} y {4} entera con {7}. Hierve suave tapado.',1200],['Saca la cebolla. Añade {5}, {6} y {0} lavadas.'],['Fuego muy suave, sin remover: mueve la olla por las asas para que no se rompan.',900],['Corta el compango en trozos y sirve con las fabes.']]},
+{id:'b5',n:'Hummus',c:'Legumbres',b:4,m:10,k:180,u:'Batidora',i:[[400,'g','Garbanzos cocidos (bote)'],[2,'cda','Tahini (pasta de sésamo)'],[1,'diente','Ajo'],[.5,'ud','Limón (el zumo)'],[3,'cda','Aceite de oliva'],[1,'cdta','Comino'],[50,'ml','Agua fría'],[1,'pizca','Pimentón']],p:[
+['Lava y escurre {0}.'],['Tritura todo menos el pimentón hasta que quede fino.',120],['Ajusta de sal y, si está muy espeso, añade un chorrito más de agua.'],['Sirve con un hilo de aceite y {7} por encima.']]},
+{id:'b6',n:'Arroz al horno',c:'Arroces',b:4,m:75,k:620,u:'Cazuela de barro o fuente de horno, sartén',i:[[320,'g','Arroz redondo'],[400,'g','Costilla de cerdo troceada'],[2,'ud','Morcilla de cebolla'],[200,'g','Garbanzos cocidos'],[1,'ud','Patata'],[1,'ud','Tomate'],[1,'ud','Cabeza de ajos'],[1,'cdta','Pimentón dulce'],[1,'pizca','Azafrán o colorante'],[4,'cda','Aceite de oliva'],[800,'ml','Caldo de cocido o de pollo']],p:[
+['Enciende el horno a 220 °C. Pon a calentar {10}.'],['En la sartén con {9}, fríe la patata en rodajas, el tomate en rodajas y la cabeza de ajos entera. Resérvalo.',600],['Dora {1} y {2} en la misma sartén. Saca la morcilla.',480],['Añade {7} y {0}, remueve 1 minuto y pásalo todo a la cazuela con {3} y {8}.',60],['Vierte el caldo hirviendo. Coloca encima la patata, el tomate, la morcilla y los ajos en el centro. Al horno.',1200],['Saca y deja reposar antes de servir.',300]]},
+{id:'b7',n:'Arroz caldoso de verduras',c:'Arroces',b:2,m:40,k:450,u:'Cazuela',i:[[160,'g','Arroz redondo'],[100,'g','Judías verdes'],[.5,'ud','Pimiento rojo'],[1,'ud','Calabacín pequeño'],[.5,'ud','Cebolla'],[2,'diente','Ajo'],[100,'g','Tomate triturado'],[1,'cdta','Pimentón dulce'],[1,'pizca','Azafrán o colorante'],[3,'cda','Aceite de oliva'],[900,'ml','Caldo de verduras']],p:[
+['Pica todas las verduras. Pon a calentar {10}.'],['Sofríe la verdura en la cazuela con {9}.',600],['Añade {6} y {7}.',180],['Echa {0} y remueve 1 minuto.',60],['Vierte el caldo caliente y {8}. Fuego medio, removiendo de vez en cuando.',1080],['Reposa un par de minutos y sirve con caldo.',120]]},
+{id:'b8',n:'Paella de pollo',c:'Arroces',b:4,m:60,k:640,u:'Paellera o sartén grande',i:[[320,'g','Arroz redondo'],[600,'g','Pollo troceado'],[200,'g','Judía verde plana'],[150,'g','Garrofón (opcional)'],[100,'g','Tomate triturado'],[1,'cdta','Pimentón dulce'],[1,'pizca','Azafrán o colorante'],[5,'cda','Aceite de oliva'],[1000,'ml','Agua']],p:[
+['Sala {1} y dóralo en la paellera con {7}, a fuego medio.',720],['Añade {2} troceada.',240],['Aparta a los lados, echa {4} en el centro y luego {5}.',180],['Vierte {8}, {3} y {6}. Hierve y prueba de sal.',1200],['Reparte {0} en cruz y extiéndelo. Fuego fuerte sin remover.',480],['Baja a fuego medio, sin remover.',600],['Apaga, tapa con un paño y deja reposar.',300]]},
+{id:'b9',n:'Arroz a la cubana',c:'Arroces',b:2,m:25,k:700,u:'Cazo y sartén',i:[[160,'g','Arroz largo'],[320,'ml','Agua'],[2,'ud','Huevo'],[2,'ud','Plátano'],[200,'g','Tomate frito'],[1,'diente','Ajo'],[2,'cda','Aceite de oliva'],[150,'ml','Aceite para freír']],p:[
+['Dora {5} en el cazo con {6}. Añade {0} y remueve.',60],['Echa {1} hirviendo y sal. Tapa y fuego bajo.',900],['Calienta {4} en un cazo pequeño.',180],['Fríe los plátanos abiertos a lo largo.',180],['Fríe {2}.',120],['Sirve el arroz con el tomate, el plátano y el huevo.']]},
+{id:'b10',n:'Macarrones con chorizo y tomate',c:'Pasta',b:2,m:25,k:720,u:'Olla y sartén',i:[[200,'g','Macarrones'],[80,'g','Chorizo'],[.5,'ud','Cebolla'],[300,'g','Tomate triturado'],[1,'pizca','Azúcar'],[1,'cdta','Orégano'],[40,'g','Queso rallado'],[1,'cda','Aceite de oliva']],p:[
+['Cuece {0} en agua con sal.',600],['Pocha {2} picada en la sartén con {7}.',300],['Añade {1} en daditos.',120],['Echa {3}, {4} y {5}. Fuego bajo.',600],['Mezcla con la pasta escurrida y pon {6}. Si quieres, gratina en el horno.',300]]},
+{id:'b11',n:'Espaguetis a la carbonara',c:'Pasta',b:2,m:15,k:720,u:'Olla y sartén',i:[[200,'g','Espaguetis'],[100,'g','Panceta en tiras'],[2,'ud','Yema de huevo'],[1,'ud','Huevo'],[50,'g','Queso parmesano rallado'],[1,'pizca','Pimienta negra']],p:[
+['Cuece {0} en agua con sal.',540],['Dora {1} en la sartén sin aceite.',300],['Bate {2}, {3}, {4} y la pimienta en un bol.'],['Escurre la pasta guardando un vaso del agua. Fuera del fuego, mézclala con la panceta.'],['Añade la crema de huevo y un chorrito del agua de cocción, removiendo, hasta que quede cremosa. El huevo no debe cuajar.']]},
+{id:'b12',n:'Espaguetis con ajo y guindilla',c:'Pasta',b:1,m:12,k:560,u:'Olla y sartén',i:[[100,'g','Espaguetis'],[2,'diente','Ajo'],[1,'pizca','Guindilla'],[3,'cda','Aceite de oliva'],[1,'pizca','Perejil']],p:[
+['Cuece {0} en agua con sal.',540],['Lamina {1} y ponlo en la sartén con {3} y la guindilla, a fuego bajo.',180],['Mezcla la pasta con el aceite, un chorrito del agua de cocción y el perejil.']]},
+{id:'b13',n:'Lasaña de carne',c:'Pasta',b:4,m:70,k:690,u:'Fuente de horno, sartén y cazo',i:[[12,'ud','Placa de lasaña precocida'],[500,'g','Carne picada mixta'],[1,'ud','Cebolla'],[1,'ud','Zanahoria'],[400,'g','Tomate triturado'],[600,'ml','Leche'],[50,'g','Mantequilla'],[50,'g','Harina'],[100,'g','Queso rallado'],[2,'cda','Aceite de oliva'],[1,'pizca','Nuez moscada']],p:[
+['Si el paquete lo pide, hidrata las placas en agua caliente.'],['Pica {2} y {3} y sofríelas en la sartén con {9}.',480],['Añade {1} y deshazla.',360],['Echa {4}, sal y deja a fuego bajo.',900],['Bechamel: funde {6} en el cazo, añade {7} y remueve.',120],['Echa {5} poco a poco sin dejar de remover hasta que espese. Sal y nuez moscada.',480],['Enciende el horno a 200 °C. Monta capas: placas, carne y un poco de bechamel. Termina con bechamel y {8}.'],['Al horno.',1500],['Deja reposar antes de cortar.',300]]},
+{id:'b14',n:'Fideuá',c:'Pasta',b:4,m:40,k:560,u:'Paellera o sartén grande',i:[[320,'g','Fideo grueso de fideuá'],[300,'g','Gambas o langostinos'],[200,'g','Sepia o calamar en dados'],[2,'diente','Ajo'],[100,'g','Tomate triturado'],[1,'cdta','Pimentón dulce'],[1,'pizca','Azafrán o colorante'],[5,'cda','Aceite de oliva'],[800,'ml','Caldo de pescado']],p:[
+['Pon a calentar {8}. Dora {1} en la paellera con {7} y sácalas.',120],['Sofríe {2} y {3} picado.',300],['Añade {0} y tuéstalo removiendo.',180],['Echa {4} y {5}.',120],['Vierte el caldo hirviendo con {6}. Fuego fuerte.',600],['Pon las gambas encima y deja reposar.',300]]},
+{id:'b15',n:'Crema de calabacín',c:'Cremas y sopas',b:2,m:30,k:220,u:'Olla y batidora',i:[[2,'ud','Calabacín'],[1,'ud','Patata pequeña'],[.5,'ud','Cebolla'],[2,'ud','Quesito en porciones'],[2,'cda','Aceite de oliva'],[400,'ml','Caldo de verduras o agua']],p:[
+['Rehoga {2} picada en la olla con {4}.',300],['Añade {0} con piel y {1}, troceados, y {5} hasta cubrir.',1200],['Añade {3} y tritura con la batidora hasta que quede fina. Prueba de sal.',120]]},
+{id:'b16',n:'Crema de calabaza',c:'Cremas y sopas',b:2,m:35,k:210,u:'Olla y batidora',i:[[500,'g','Calabaza pelada'],[1,'ud','Zanahoria'],[.5,'ud','Cebolla'],[1,'ud','Patata pequeña'],[2,'cda','Aceite de oliva'],[500,'ml','Caldo de verduras'],[1,'pizca','Nuez moscada']],p:[
+['Rehoga {2} picada en la olla con {4}.',300],['Añade {0}, {1} y {3} troceadas y {5}.',1500],['Tritura, añade nuez moscada y prueba de sal.',120]]},
+{id:'b17',n:'Crema de puerros',c:'Cremas y sopas',b:2,m:35,k:260,u:'Olla y batidora',i:[[2,'ud','Puerro (la parte blanca)'],[1,'ud','Patata'],[.5,'ud','Cebolla'],[20,'g','Mantequilla'],[500,'ml','Caldo de pollo o de verduras'],[100,'ml','Leche o nata']],p:[
+['Rehoga {0} y {2} en rodajas con {3}, a fuego suave.',480],['Añade {1} troceada y {4}.',1200],['Echa {5} y tritura. Se toma caliente o fría.',120]]},
+{id:'b18',n:'Salmorejo',c:'Cremas y sopas',b:2,m:10,k:320,u:'Batidora',i:[[500,'g','Tomate maduro'],[100,'g','Pan del día anterior'],[1,'diente','Ajo pequeño'],[60,'ml','Aceite de oliva virgen extra'],[1,'ud','Huevo duro'],[30,'g','Jamón serrano en taquitos']],p:[
+['Tritura {0} troceado.',60],['Añade {1} troceado y deja que se empape.',300],['Añade {2} y sal, y tritura mientras echas {3} en hilo.',120],['Enfría en la nevera al menos 1 hora.'],['Sirve con {4} picado y {5}.']]},
+{id:'b19',n:'Gazpacho',c:'Cremas y sopas',b:4,m:15,k:180,u:'Batidora',i:[[1000,'g','Tomate maduro'],[.5,'ud','Pimiento verde'],[.5,'ud','Pepino'],[1,'diente','Ajo'],[60,'ml','Aceite de oliva virgen extra'],[2,'cda','Vinagre'],[200,'ml','Agua fría'],[50,'g','Pan (opcional)']],p:[
+['Trocea {0}, {1}, {2} pelado y {3}.'],['Tritura todo con el aceite, el vinagre, el agua y sal.',120],['Si lo quieres fino, cuélalo. Enfría en la nevera.']]},
+{id:'b20',n:'Sopa de fideos',c:'Cremas y sopas',b:2,m:15,k:260,u:'Olla',i:[[800,'ml','Caldo de pollo'],[60,'g','Fideos finos'],[1,'ud','Huevo duro'],[30,'g','Jamón serrano en taquitos']],p:[
+['Calienta {0} hasta que hierva.',300],['Echa {1}.',240],['Añade {2} picado y {3}.']]},
+{id:'b21',n:'Sopa de ajo',c:'Cremas y sopas',b:2,m:25,k:300,u:'Cazuela',i:[[4,'diente','Ajo'],[100,'g','Pan duro en rebanadas finas'],[50,'g','Jamón serrano'],[1,'cdta','Pimentón dulce'],[3,'cda','Aceite de oliva'],[700,'ml','Caldo de pollo o agua'],[2,'ud','Huevo']],p:[
+['Dora {0} laminado en la cazuela con {4}.',120],['Añade {2} picado y {1}, y dóralo.',120],['Aparta del fuego y echa {3}. Remueve rápido para que no se queme.'],['Añade {5} y hierve.',600],['Casca {6} encima y tapa hasta que cuajen.',180]]},
+{id:'b22',n:'Pisto manchego',c:'Verduras',b:2,m:50,k:250,u:'Sartén honda',i:[[1,'ud','Cebolla'],[1,'ud','Pimiento rojo'],[1,'ud','Pimiento verde'],[1,'ud','Calabacín'],[400,'g','Tomate triturado'],[4,'cda','Aceite de oliva'],[1,'pizca','Azúcar']],p:[
+['Corta toda la verdura en dados pequeños.'],['Pocha {0} con {5} a fuego medio-bajo.',480],['Añade los pimientos.',600],['Añade {3}.',480],['Echa {4}, sal y {6}. Fuego bajo.',1200]]},
+{id:'b23',n:'Judías verdes con patata',c:'Verduras',b:2,m:30,k:260,u:'Olla y sartén',i:[[400,'g','Judías verdes'],[2,'ud','Patata'],[3,'diente','Ajo'],[1,'cdta','Pimentón dulce'],[3,'cda','Aceite de oliva']],p:[
+['Cuece {0} troceadas y {1} en trozos en agua con sal.',900],['Escurre.'],['Dora {2} laminado en la sartén con {4}. Aparta del fuego y añade {3}.',120],['Echa el refrito por encima y mezcla.']]},
+{id:'b24',n:'Coliflor con ajo y pimentón',c:'Verduras',b:2,m:25,k:180,u:'Olla y sartén',i:[[600,'g','Coliflor en ramilletes'],[3,'diente','Ajo'],[1,'cdta','Pimentón dulce'],[3,'cda','Aceite de oliva'],[1,'cda','Vinagre']],p:[
+['Cuece {0} en agua con sal.',600],['Escurre bien.'],['Dora {1} laminado con {3}. Aparta y añade {2}.',120],['Echa la coliflor y {4} y saltea.',120]]},
+{id:'b25',n:'Berenjenas rellenas de carne',c:'Verduras',b:2,m:60,k:450,u:'Horno, bandeja y sartén',i:[[2,'ud','Berenjena'],[250,'g','Carne picada'],[.5,'ud','Cebolla'],[150,'g','Tomate frito'],[60,'g','Queso rallado'],[2,'cda','Aceite de oliva']],p:[
+['Enciende el horno a 200 °C. Parte {0} a lo largo, haz cortes en la carne, sal y un poco de aceite.'],['Hornéalas boca arriba.',1500],['Vacía la pulpa con una cuchara y pícala.'],['Sofríe {2} picada, añade {1} y luego la pulpa y {3}.',660],['Rellena, pon {4} y gratina.',600]]},
+{id:'b26',n:'Champiñones al ajillo',c:'Verduras',b:2,m:15,k:140,u:'Sartén',i:[[400,'g','Champiñones'],[3,'diente','Ajo'],[1,'pizca','Guindilla (opcional)'],[3,'cda','Aceite de oliva'],[50,'ml','Vino blanco (opcional)'],[1,'pizca','Perejil']],p:[
+['Limpia y lamina {0}.'],['Dora {1} laminado y la guindilla en {3}.',60],['Añade los champiñones a fuego fuerte. Sal.',360],['Echa {4} y deja que se evapore. Termina con perejil.',120]]},
+{id:'b27',n:'Verduras asadas al horno',c:'Verduras',b:2,m:45,k:220,u:'Bandeja de horno',i:[[1,'ud','Berenjena'],[1,'ud','Calabacín'],[1,'ud','Pimiento rojo'],[1,'ud','Cebolla'],[2,'ud','Tomate'],[3,'cda','Aceite de oliva'],[1,'cdta','Hierbas provenzales']],p:[
+['Enciende el horno a 200 °C. Corta todo en trozos grandes.'],['Ponlo en la bandeja con sal, {5} y {6}.'],['Hornea y dale la vuelta a mitad de tiempo.',2100]]},
+{id:'b28',n:'Patatas a lo pobre',c:'Verduras',b:2,m:35,k:420,u:'Sartén con tapa',i:[[500,'g','Patata'],[1,'ud','Cebolla'],[1,'ud','Pimiento verde'],[2,'diente','Ajo'],[100,'ml','Aceite de oliva']],p:[
+['Corta {0} en rodajas finas, {1} en juliana, {2} en tiras y pica {3}.'],['Ponlo todo en la sartén con {4}, sal, fuego medio-bajo y tapado. Remueve de vez en cuando.',1500],['Escurre el aceite y sirve.']]},
+{id:'b29',n:'Tortilla de patatas',c:'Huevos',b:2,m:40,k:520,u:'Sartén de 20–22 cm, plato para darle la vuelta',i:[[500,'g','Patata'],[.5,'ud','Cebolla (opcional)'],[4,'ud','Huevo'],[200,'ml','Aceite de oliva para freír']],p:[
+['Pela {0} y córtala en láminas finas. Pica {1}.'],['Fríe patata y cebolla en {3} a fuego medio-bajo, que se poche sin dorar.',1200],['Escurre el aceite. Bate {2} con sal, mezcla con la patata y deja reposar.',180],['Sartén con 1 cucharada de aceite a fuego medio. Cuaja la primera cara.',180],['Dale la vuelta con un plato y cuaja la otra.',120]]},
+{id:'b30',n:'Tortilla francesa con atún',c:'Huevos',b:1,m:8,k:330,u:'Sartén pequeña',i:[[2,'ud','Huevo'],[1,'ud','Lata pequeña de atún'],[1,'cdta','Aceite de oliva']],p:[
+['Bate {0} con sal y añade el atún escurrido.'],['Sartén con {2} a fuego medio. Echa el huevo y, cuando cuaje por abajo, dóblala.',90]]},
+{id:'b31',n:'Huevos rotos con jamón',c:'Huevos',b:2,m:30,k:680,u:'Sartén',i:[[400,'g','Patata'],[4,'ud','Huevo'],[80,'g','Jamón serrano'],[200,'ml','Aceite de oliva para freír']],p:[
+['Corta {0} en bastones y fríela a fuego medio.',900],['Escurre, sala y pon en el plato con {2} encima.'],['Fríe {1} con la yema jugosa.',120],['Ponlos sobre las patatas y rómpelos.']]},
+{id:'b32',n:'Revuelto de setas y gambas',c:'Huevos',b:2,m:15,k:320,u:'Sartén',i:[[250,'g','Setas o champiñones'],[150,'g','Gambas peladas'],[4,'ud','Huevo'],[2,'diente','Ajo'],[2,'cda','Aceite de oliva']],p:[
+['Dora {3} picado en {4}.',60],['Añade {0} troceadas.',300],['Añade {1} y sal.',120],['Echa {2} batidos y remueve a fuego bajo hasta que cuajen jugosos.',120]]},
+{id:'b33',n:'Huevos a la flamenca',c:'Huevos',b:2,m:30,k:480,u:'Cazuelitas de barro o fuente de horno',i:[[4,'ud','Huevo'],[300,'g','Tomate frito'],[100,'g','Guisantes'],[60,'g','Chorizo'],[40,'g','Jamón serrano'],[1,'ud','Pimiento rojo asado (bote)']],p:[
+['Enciende el horno a 200 °C. Calienta {1} con {2} y {3} en dados.',300],['Reparte en las cazuelitas y casca {0} encima. Pon {4} y tiras de pimiento.'],['Al horno hasta que cuaje la clara.',720]]},
+{id:'b34',n:'Huevos rellenos',c:'Huevos',b:2,m:25,k:300,u:'Cazo',i:[[4,'ud','Huevo'],[1,'ud','Lata de atún'],[2,'cda','Mayonesa'],[2,'cda','Tomate frito']],p:[
+['Cuece {0} en agua hirviendo.',600],['Enfríalos en agua fría y pélalos.'],['Pártelos a lo largo y saca las yemas. Reserva una.'],['Mezcla las yemas con el atún, {3} y la mitad de {2}. Rellena las claras.'],['Cubre con el resto de mayonesa y ralla por encima la yema reservada.']]},
+{id:'b35',n:'Albóndigas en salsa',c:'Carne',b:4,m:50,k:520,u:'Sartén honda y batidora',i:[[500,'g','Carne picada mixta'],[1,'ud','Huevo'],[30,'g','Pan rallado'],[2,'diente','Ajo'],[1,'pizca','Perejil'],[30,'g','Harina'],[1,'ud','Cebolla'],[1,'ud','Zanahoria'],[100,'ml','Vino blanco'],[300,'ml','Caldo de carne o agua'],[5,'cda','Aceite de oliva']],p:[
+['Mezcla {0}, {1}, {2}, {3} picado, perejil y sal. Haz bolas y pásalas por {5}.'],['Fríelas en {10} hasta que se doren y sácalas.',360],['En ese aceite pocha {6} y {7} picadas.',600],['Añade {8} y deja que se evapore.',120],['Echa {9} y tritura la salsa con la batidora.'],['Mete las albóndigas en la salsa a fuego suave.',900]]},
+{id:'b36',n:'Pollo al ajillo',c:'Carne',b:2,m:35,k:480,u:'Sartén honda o cazuela con tapa',i:[[600,'g','Pollo troceado'],[6,'diente','Ajo'],[100,'ml','Vino blanco'],[1,'hoja','Laurel'],[4,'cda','Aceite de oliva']],p:[
+['Salpimienta {0} y dóralo en {4} a fuego medio-alto.',720],['Añade {1} chafados con piel.',180],['Echa {2} y {3}. Tapa y fuego bajo.',900]]},
+{id:'b37',n:'Muslos de pollo al horno con patatas',c:'Carne',b:2,m:60,k:650,u:'Bandeja de horno',i:[[4,'ud','Muslo de pollo'],[400,'g','Patata'],[1,'ud','Cebolla'],[1,'ud','Limón'],[3,'diente','Ajo'],[3,'cda','Aceite de oliva'],[1,'cdta','Romero o tomillo'],[100,'ml','Vino blanco o agua']],p:[
+['Enciende el horno a 200 °C. Corta {1} y {2} en rodajas y ponlas en la bandeja con sal y la mitad del aceite.'],['Coloca encima {0} salpimentados, {4} chafados, las hierbas, el zumo del limón, {7} y el resto del aceite.'],['Al horno.',1500],['Dale la vuelta al pollo y sigue horneando.',1500]]},
+{id:'b38',n:'Lomo con champiñones y nata',c:'Carne',b:2,m:25,k:430,u:'Sartén',i:[[300,'g','Lomo de cerdo en filetes'],[250,'g','Champiñones'],[1,'diente','Ajo'],[50,'ml','Vino blanco'],[100,'ml','Nata para cocinar'],[2,'cda','Aceite de oliva']],p:[
+['Salpimienta {0} y dóralo en {5}. Sácalo.',240],['Saltea {1} laminados y {2} picado.',300],['Echa {3} y deja que se evapore.',60],['Añade {4} y deja espesar.',180],['Vuelve a meter el lomo.',120]]},
+{id:'b39',n:'Estofado de ternera',c:'Carne',b:4,m:120,k:520,u:'Olla con tapa u olla exprés',i:[[800,'g','Ternera para guisar'],[2,'ud','Zanahoria'],[1,'ud','Cebolla'],[1,'ud','Pimiento verde'],[2,'diente','Ajo'],[100,'g','Tomate triturado'],[150,'ml','Vino tinto'],[500,'ml','Caldo o agua'],[3,'ud','Patata'],[4,'cda','Aceite de oliva'],[1,'hoja','Laurel']],p:[
+['Salpimienta {0} y dórala por tandas en {9}. Sácala.',480],['Pocha {2}, {3}, {4} y {1}, todo picado.',600],['Añade {5}.',180],['Echa {6} y deja que se evapore.',180],['Vuelve a meter la carne con {7} y {10}. Tapa y fuego suave (en olla exprés, 25 minutos).',4500],['Añade {8} chascadas y sigue.',1200]]},
+{id:'b40',n:'Costillas de cerdo al horno',c:'Carne',b:2,m:75,k:720,u:'Bandeja de horno y papel de aluminio',i:[[800,'g','Costillas de cerdo'],[2,'cda','Miel'],[2,'cda','Salsa de soja'],[1,'cdta','Pimentón'],[2,'diente','Ajo'],[2,'cda','Aceite de oliva']],p:[
+['Enciende el horno a 180 °C. Mezcla {1}, {2}, {3}, {4} picado y {5}.'],['Unta {0}, ponlas en la bandeja y tapa con papel de aluminio.',2700],['Quita el papel, píntalas otra vez y sube el horno a 220 °C.',900]]},
+{id:'b41',n:'Pollo con tomate',c:'Carne',b:2,m:40,k:450,u:'Cazuela',i:[[500,'g','Pollo troceado'],[1,'ud','Cebolla'],[1,'ud','Pimiento rojo'],[2,'diente','Ajo'],[400,'g','Tomate triturado'],[1,'pizca','Azúcar'],[3,'cda','Aceite de oliva']],p:[
+['Salpimienta {0} y dóralo en {6}. Sácalo.',600],['Pocha {1}, {2} y {3} picados.',600],['Añade {4} y el azúcar.',300],['Vuelve a meter el pollo, tapa y fuego suave.',1200]]},
+{id:'b42',n:'Croquetas de jamón',c:'Carne',b:4,m:40,k:420,u:'Cazo, sartén y fuente',i:[[60,'g','Mantequilla'],[120,'g','Jamón serrano picado'],[70,'g','Harina'],[600,'ml','Leche entera'],[1,'pizca','Nuez moscada'],[2,'ud','Huevo'],[100,'g','Pan rallado'],[300,'ml','Aceite para freír']],p:[
+['Funde {0} en el cazo y sofríe {1}.',60],['Añade {2} y remueve.',120],['Echa {3} caliente poco a poco sin dejar de remover hasta tener una masa espesa. Nuez moscada.',720],['Pásala a una fuente, cúbrela con film tocando la masa y a la nevera mínimo 4 horas.'],['Forma las croquetas, pásalas por {5} batido y {6}.'],['Fríelas por tandas en {7} bien caliente.',120]]},
+{id:'b43',n:'Merluza en salsa verde',c:'Pescado',b:2,m:25,k:320,u:'Cazuela baja',i:[[4,'ud','Rodaja o lomo de merluza'],[3,'diente','Ajo'],[1,'cda','Harina'],[100,'ml','Vino blanco'],[200,'ml','Caldo de pescado o agua'],[1,'pizca','Perejil (abundante)'],[3,'cda','Aceite de oliva'],[150,'g','Almejas (opcional)']],p:[
+['Pocha {1} picado en {6} a fuego bajo.',120],['Añade {2} y remueve.',60],['Echa {3}.',120],['Añade {4} y remueve hasta que espese.'],['Mete {0} saladas y {7}. Tapa y mueve la cazuela de vez en cuando.',360],['Termina con el perejil picado.']]},
+{id:'b44',n:'Merluza a la romana',c:'Pescado',b:2,m:20,k:420,u:'Sartén',i:[[400,'g','Merluza en trozos sin espinas'],[2,'ud','Huevo'],[50,'g','Harina'],[200,'ml','Aceite para freír'],[1,'ud','Limón']],p:[
+['Sala {0}, pásala por {2} y luego por {1} batido.'],['Fríela en {3} caliente, dándole la vuelta.',180],['Escúrrela en papel y sírvela con {4}.']]},
+{id:'b45',n:'Salmón al horno con verduras',c:'Pescado',b:2,m:30,k:520,u:'Bandeja de horno',i:[[2,'ud','Lomo de salmón'],[1,'ud','Calabacín'],[1,'ud','Zanahoria'],[.5,'ud','Cebolla'],[1,'ud','Limón'],[2,'cda','Aceite de oliva'],[1,'pizca','Eneldo o perejil']],p:[
+['Enciende el horno a 200 °C. Corta {1}, {2} y {3} en láminas finas.'],['Ponlas en la bandeja con sal y {5}.',720],['Coloca {0} encima con sal, zumo de limón y eneldo.',720]]},
+{id:'b46',n:'Bacalao con tomate',c:'Pescado',b:2,m:30,k:420,u:'Cazuela y sartén',i:[[400,'g','Bacalao desalado'],[1,'ud','Cebolla'],[1,'ud','Pimiento verde'],[2,'diente','Ajo'],[400,'g','Tomate triturado'],[1,'pizca','Azúcar'],[30,'g','Harina'],[5,'cda','Aceite de oliva']],p:[
+['Pocha {1}, {2} y {3} picados con la mitad del aceite.',600],['Añade {4} y el azúcar.',900],['Pasa {0} por {6} y fríelo en la sartén con el resto del aceite.',240],['Mételo en la salsa.',300]]},
+{id:'b47',n:'Calamares encebollados',c:'Pescado',b:2,m:35,k:380,u:'Cazuela con tapa',i:[[500,'g','Calamar o pota limpios'],[2,'ud','Cebolla'],[2,'diente','Ajo'],[100,'ml','Vino blanco'],[1,'hoja','Laurel'],[4,'cda','Aceite de oliva']],p:[
+['Pocha {1} en juliana con {5} a fuego bajo.',900],['Añade {0} en anillas y {2} picado.',300],['Echa {3} y {4}. Tapa y fuego suave.',900]]},
+{id:'b48',n:'Gambas al ajillo',c:'Pescado',b:2,m:10,k:300,u:'Cazuela de barro o sartén pequeña',i:[[300,'g','Gambas peladas'],[4,'diente','Ajo'],[1,'ud','Guindilla'],[100,'ml','Aceite de oliva'],[1,'pizca','Perejil']],p:[
+['Pon {1} laminado y la guindilla en {3} a fuego bajo.',180],['Sube el fuego y echa {0} saladas.',120],['Perejil por encima y a la mesa con pan.']]},
+{id:'b49',n:'Mejillones al vapor',c:'Pescado',b:2,m:15,k:250,u:'Olla con tapa',i:[[1000,'g','Mejillones'],[100,'ml','Vino blanco o agua'],[1,'hoja','Laurel'],[1,'ud','Limón']],p:[
+['Limpia {0} y quítales las barbas.'],['Ponlos en la olla con {1} y {2}. Tapa y fuego fuerte, moviendo la olla.',300],['Tira los que no se hayan abierto. Sirve con {3}.']]},
+{id:'b50',n:'Sepia a la plancha',c:'Pescado',b:2,m:15,k:250,u:'Plancha o sartén y mortero',i:[[500,'g','Sepia limpia'],[2,'diente','Ajo'],[1,'pizca','Perejil'],[4,'cda','Aceite de oliva']],p:[
+['Machaca {1} y el perejil con {3}.'],['Corta {0} en tiras y hazla en la plancha muy caliente con sal.',240],['Dale la vuelta.',120],['Riégala con el majado.']]},
+{id:'b51',n:'Ensalada mixta',c:'Ensaladas',b:2,m:15,k:300,u:'Cazo y ensaladera',i:[[1,'ud','Lechuga'],[2,'ud','Tomate'],[.5,'ud','Cebolla'],[1,'ud','Lata de atún'],[2,'ud','Huevo'],[50,'g','Aceitunas'],[1,'ud','Zanahoria'],[3,'cda','Aceite de oliva'],[1,'cda','Vinagre']],p:[
+['Cuece {4} en agua hirviendo y enfríalos.',600],['Corta {0}, {1}, {2} y ralla {6}.'],['Añade el atún, los huevos en cuartos y {5}.'],['Aliña con {7}, {8} y sal.']]},
+{id:'b52',n:'Ensaladilla rusa',c:'Ensaladas',b:4,m:40,k:420,u:'Olla y bol grande',i:[[600,'g','Patata'],[2,'ud','Zanahoria'],[100,'g','Guisantes congelados'],[3,'ud','Huevo'],[2,'ud','Lata de atún'],[200,'g','Mayonesa'],[50,'g','Aceitunas']],p:[
+['Cuece {0} con piel y {1} en agua con sal. A los 10 minutos añade {3}, y en los últimos 3, {2}.',1200],['Enfría, pela y corta todo en dados.'],['Mezcla con el atún, {5} y {6}.'],['Enfría en la nevera al menos 1 hora.']]},
+{id:'b53',n:'Ensalada de lentejas',c:'Ensaladas',b:2,m:10,k:400,u:'Ensaladera',i:[[400,'g','Lentejas cocidas (bote)'],[1,'ud','Tomate'],[.5,'ud','Pimiento rojo'],[.5,'ud','Cebolla morada'],[1,'ud','Lata de atún (opcional)'],[3,'cda','Aceite de oliva'],[1,'cda','Vinagre']],p:[
+['Lava y escurre {0}.'],['Pica {1}, {2} y {3} muy pequeño.'],['Mezcla todo con el atún y aliña con {5}, {6} y sal.']]},
+{id:'b54',n:'Ensalada de pasta',c:'Ensaladas',b:2,m:20,k:520,u:'Olla y ensaladera',i:[[160,'g','Pasta corta'],[1,'ud','Tomate'],[100,'g','Maíz dulce'],[1,'ud','Lata de atún'],[50,'g','Aceitunas'],[60,'g','Queso en dados'],[3,'cda','Aceite de oliva'],[1,'cda','Vinagre']],p:[
+['Cuece {0} en agua con sal.',600],['Enfríala bajo el grifo y escúrrela.'],['Mezcla con {1} en dados, {2}, el atún, {4} y {5}. Aliña.']]},
+{id:'b55',n:'Flan de huevo',c:'Postres',b:4,m:60,k:260,u:'Flanera o moldes, cazo y horno al baño maría',i:[[60,'g','Azúcar para el caramelo'],[4,'ud','Huevo'],[500,'ml','Leche entera'],[100,'g','Azúcar'],[1,'cdta','Vainilla o piel de limón']],p:[
+['Caramelo: pon {0} en un cazo a fuego medio sin remover hasta que esté dorado. Échalo en el molde.',300],['Enciende el horno a 180 °C. Bate {1}, {3}, {2} y la vainilla sin hacer espuma.'],['Echa la mezcla en el molde y mételo en una bandeja con agua caliente (baño maría).'],['Al horno, hasta que un palillo salga limpio.',2700],['Deja enfriar y a la nevera mínimo 4 horas.']]},
+{id:'b56',n:'Arroz con leche',c:'Postres',b:4,m:50,k:320,u:'Cazo grande',i:[[100,'g','Arroz redondo'],[1000,'ml','Leche entera'],[90,'g','Azúcar'],[1,'ud','Rama de canela'],[1,'ud','Piel de limón'],[1,'pizca','Canela molida']],p:[
+['Calienta {1} con la canela y la piel de limón hasta que hierva.',300],['Añade {0} y deja a fuego bajo, removiendo a menudo.',2400],['Añade {2} y remueve.',300],['Quita la canela y el limón. Espolvorea canela y deja enfriar.']]},
+{id:'b57',n:'Natillas',c:'Postres',b:4,m:25,k:250,u:'Cazo y varillas',i:[[500,'ml','Leche entera'],[4,'ud','Yema de huevo'],[80,'g','Azúcar'],[20,'g','Maicena'],[1,'ud','Rama de canela'],[1,'ud','Piel de limón'],[4,'ud','Galleta María']],p:[
+['Aparta un vaso de la leche. Calienta el resto con la canela y el limón.',300],['Mezcla {1}, {2}, {3} y el vaso de leche fría.'],['Fuera del fuego, añade la mezcla al cazo. Vuelve a fuego bajo removiendo sin que hierva hasta que espese.',360],['Reparte en cuencos con {6} encima y canela. A la nevera.']]},
+{id:'b58',n:'Torrijas',c:'Postres',b:4,m:30,k:380,u:'Cazo, sartén y platos hondos',i:[[8,'ud','Rebanada de pan del día anterior'],[500,'ml','Leche'],[60,'g','Azúcar'],[1,'ud','Rama de canela'],[1,'ud','Piel de limón'],[2,'ud','Huevo'],[200,'ml','Aceite para freír'],[50,'g','Azúcar con canela para rebozar']],p:[
+['Hierve {1} con {2}, la canela y el limón. Deja templar.',600],['Empapa {0} en la leche.'],['Pásalas por {5} batido y fríelas 1 minuto por cada lado.',120],['Escurre y reboza en el azúcar con canela.']]},
+{id:'b59',n:'Bizcocho de yogur',c:'Postres',b:8,fx:1,m:50,k:280,u:'Molde de 22 cm, varillas y horno',i:[[1,'ud','Yogur natural (el vaso sirve de medida)'],[3,'ud','Huevo'],[2,'ud','Vaso de yogur de azúcar'],[3,'ud','Vaso de yogur de harina'],[1,'ud','Vaso de yogur de aceite de girasol'],[1,'ud','Sobre de levadura química'],[1,'ud','Ralladura de limón']],p:[
+['Enciende el horno a 180 °C y engrasa el molde.'],['Bate {1} con el azúcar hasta que blanqueen.',120],['Añade el yogur, el aceite y la ralladura.'],['Añade la harina con la levadura y mezcla sin batir de más.'],['Al horno sin abrir la puerta. Comprueba con un palillo.',2100],['Deja enfriar antes de desmoldar.']]},
+{id:'b60',n:'Manzanas asadas',c:'Postres',b:2,m:45,k:200,u:'Fuente de horno',i:[[2,'ud','Manzana reineta o golden'],[2,'cdta','Azúcar'],[1,'pizca','Canela'],[10,'g','Mantequilla'],[50,'ml','Vino dulce o agua']],p:[
+['Enciende el horno a 190 °C. Quita el corazón a {0} sin llegar al fondo.'],['Rellena con {1}, canela y {3}. Ponlas en la fuente con {4}.'],['Al horno.',2100]]}
+];
+const RCATS=['Legumbres','Arroces','Pasta','Cremas y sopas','Verduras','Huevos','Carne','Pescado','Ensaladas','Postres'];
+const UN={cda:['cucharada','cucharadas'],cdta:['cucharadita','cucharaditas'],diente:['diente','dientes'],hoja:['hoja','hojas']};
+const fq=q=>{if(q>=20)return String(Math.round(q/5)*5);return fmt(q)};
+const rq=(q,u)=>u==='pizca'?'una pizca':UN[u]?`${fq(q)} ${UN[u][q>1?1:0]}`:`${fq(q)} ${u}`;
+const lowname=n=>n.replace(/\s*\(.*?\)/g,'').toLowerCase();
+const plur=(w,q)=>q>1?w.replace(/^(\S+)/,m=>/[aeiouáéó]$/.test(m)?m+'s':m+'es'):w;
+function tok(r,k,sc){const [q0,u,n]=r.i[k],q=adj(q0*sc,u,n),nm=lowname(n);
+  if(u==='ud')return `${fq(q)} ${plur(nm,q)}`;
+  if(u==='pizca')return `una pizca de ${nm}`;
+  return `${rq(q,u)} de ${nm}`}
+const rsc=(r,s)=>r.fx?1:s/r.b;
+// ajusta cantidades contables: huevos enteros, el resto a medias unidades
+const adj=(q,u,n)=>u==='ud'||u==='diente'||u==='hoja'?(/^(huevo|yema)/i.test(n)?Math.max(1,Math.round(q)):Math.max(.5,Math.round(q*2)/2)):q;
+const rtext=(r,t,sc)=>t.replace(/\{(\d+)\}/g,(m,k)=>tok(r,+k,sc));
+
+// ---------- ESTADO ----------
+let off=0,tab='menu';
+const wkDate=()=>{const d=monday(new Date());d.setDate(d.getDate()+off*7);return d};
+const wk=()=>key(wkDate());
+
+function header(){
+  const d=wkDate(),e=new Date(d);e.setDate(e.getDate()+6);
+  const f=x=>x.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  $('#wt').textContent=off===0?'Esta semana':off===1?'Semana que viene':off===-1?'Semana pasada':`Semana del ${f(d)}`;
+  $('#wd').textContent=`${f(d)} – ${f(e)} · misma compra, platos distintos`;
+  const p=plan(wk());const per=Object.keys(ING).filter(id=>ING[id].p);
+  const use=Math.round(per.reduce((s,id)=>s+(STOCK[id]-p.st[id])/STOCK[id],0)/per.length*100);
+  const done=ls.get('mc_done_'+wk(),[]).length;
+  const all=[...p.C,...p.N],kd=Math.round(all.reduce((s,x)=>s+kcal(x),0)/7/10)*10;
+  $('#st').innerHTML=`<div><b>${Math.round(COMPRA)} €</b>compra</div><div><b>${use}%</b>usado</div><div><b>${kd}</b>kcal/día*</div><div><b>${done}/${all.length}</b>hechos</div>`;
+}
+
+const LAB={full:'Calentar',part:'Terminar',fresh:'Preparar'};
+const slotName=s=>`${DAYS[+s.slice(1)]} · ${s[0]==='c'?'comida':'cena'}`;
+function vMenu(){
+  const p=plan(wk()),done=ls.get('mc_done_'+wk(),[]);
+  const d0=wkDate();
+  const dish=(x,slot,lab,d)=>{if(!x)return '';const st=store(x,d),dn=done.includes(slot);
+    const where=st==='dia'?'se prepara el mismo día':`del domingo, en ${st==='nevera'?'la nevera':'el congelador'}`;
+    return `<div class="dish ${dn?'done':''}"><span class="k">${lab}</span><div class="n"><b>${x.n}</b><small>${kcal(x)} kcal · ${eur(cost(x))} · ${weekMin(x)} min el día<br>${where}</small></div><button class="go" data-c="${x.id}" data-s="${slot}">${dn?'Hecho':LAB[BC[x.id].m]}</button></div>`};
+  return `<div class="tip"><b>Domingo:</b> lo cocinas casi todo en la pestaña «Domingo». Entre semana, cada plato son 2–10 minutos.</div>`+
+  DAYS.map((n,i)=>{const d=new Date(d0);d.setDate(d.getDate()+i);
+    const dk=(p.C[i]?kcal(p.C[i]):0)+(p.N[i]?kcal(p.N[i]):0);
+    const nx=[p.C[i+1],p.N[i+1]].filter(x=>x&&thaw(x,i+1));
+    const night=i<6&&nx.length?`<div class="night">Esta noche: pasa del congelador a la nevera ${nx.map(x=>[store(x,i+1)==='congelador'?'el táper':'',x.i.merluza?'la merluza':''].filter(Boolean).join(' y ')+' de «'+x.n+'»').join('; ')}.</div>`:'';
+    return `<section class="day"><h2>${n}<span>${dk} kcal · ${d.getDate()}/${d.getMonth()+1}</span></h2>${dish(p.C[i],'c'+i,'Comida',i)}${dish(p.N[i],'n'+i,'Cena',i)}${night}</section>`}).join('')+
+  `<p style="font-size:13px;color:var(--mute);margin:4px 2px">Todas las recetas son para 1 persona. Kcal/día = comida + cena; el desayuno, la fruta y el pan van aparte. Calorías aproximadas, aceite incluido.</p>
+   <div class="tip"><b>Instalar:</b> en iPhone, Safari → Compartir → «Añadir a pantalla de inicio». En Android, Chrome → ⋮ → «Instalar aplicación». Funciona sin internet.</div>`;
+}
+
+function sunday(){
+  const p=plan(wk()),list=[];
+  p.C.forEach((x,d)=>list.push({r:x,d,slot:'c'+d}));p.N.forEach((x,d)=>list.push({r:x,d,slot:'n'+d}));
+  const cook=list.filter(o=>needsDom(o.r));
+  const A=list.reduce((s,o)=>s+(BC[o.r.id].A||0),0),P=list.reduce((s,o)=>s+(BC[o.r.id].P||0),0),H=list.reduce((s,o)=>s+(BC[o.r.id].H||0),0);
+  const secs=cook.reduce((s,o)=>s+domSteps(o.r).reduce((a,x)=>a+(x[1]||0),0),0);
+  const mins=Math.round((secs*.6+cook.length*240+(A||P?600:0))/60/5)*5;
+  cook.sort((a,b)=>domSteps(b.r).reduce((s,x)=>s+(x[1]||0),0)-domSteps(a.r).reduce((s,x)=>s+(x[1]||0),0));
+  return {list,cook,A,P,H,mins};
+}
+const hm=m=>m>=60?`${Math.floor(m/60)} h ${m%60?m%60+' min':''}`:`${m} min`;
+function vDomingo(){
+  const S=sunday(),dn=ls.get('mc_sun_'+wk(),false);
+  const grp=w=>S.list.filter(o=>store(o.r,o.d)===w);
+  const row=o=>`<div class="row"><div class="t"><b style="font-weight:500">${o.r.n}</b><span>${slotName(o.slot)}</span></div></div>`;
+  const nev=grp('nevera'),con=grp('congelador'),dia=grp('dia');
+  return `<h3>Sesión del domingo</h3>
+  <p style="margin:0;color:var(--mute)">${S.cook.length} platos al fuego, unas ${hm(S.mins)} con dos fuegos y el horno a la vez. Necesitas ${S.cook.length} tápers.</p>
+  <button class="go big" id="sun">${dn?'Hecho · repetir sesión':'Empezar sesión del domingo'}</button>
+  ${S.A||S.P||S.H?`<div class="tip">Primero cueces de una vez ${[S.A?S.A+' g de arroz':'',S.P?S.P+' g de macarrones':'',S.H?S.H+' huevos duros':''].filter(Boolean).join(', ')} para toda la semana.</div>`:''}
+  <div class="sec">A la nevera · lunes a miércoles (${nev.length})</div>${nev.map(row).join('')}
+  <div class="sec">Al congelador · jueves a domingo (${con.length})</div>${con.map(row).join('')||'<p style="color:var(--mute)">Nada.</p>'}
+  <div class="sec">Se prepara el mismo día (${dia.length})</div>${dia.map(row).join('')||'<p style="color:var(--mute)">Nada.</p>'}
+  <div class="tip"><b>Reglas:</b> deja templar y mete los tápers en la nevera antes de 2 horas. En la nevera, como mucho 3 días. Lo del congelador pásalo a la nevera la noche antes; la app te avisa cada día en el menú. Las patatas y los fritos no se congelan bien, por eso van de lunes a miércoles.</div>`;
+}
+
+// ---------- RECETARIO: vistas ----------
+let rcat='Todas',rquery='',rsel=null,rsrv=2;
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function rcards(){
+  const fav=ls.get('mc_fav',[]),q=norm(rquery.trim());
+  const L=RB.filter(r=>(rcat==='Todas'||(rcat==='Favoritas'?fav.includes(r.id):r.c===rcat))&&(!q||norm(r.n+' '+r.c+' '+r.i.map(x=>x[2]).join(' ')).includes(q)));
+  if(!L.length)return `<p style="color:var(--mute)">${rcat==='Favoritas'?'Aún no tienes favoritas. Pulsa la estrella dentro de una receta.':'No hay recetas con eso. Prueba con un ingrediente: «pollo», «garbanzos»…'}</p>`;
+  return L.map(r=>`<button class="item rc" data-r="${r.id}"><span class="nm"><b style="font-weight:500">${fav.includes(r.id)?'★ ':''}${r.n}</b><br><small style="color:var(--mute)">${r.c} · ${r.m} min · ${r.k} kcal/ración</small></span><span class="q">›</span></button>`).join('');
+}
+function vRecetas(){
+  if(rsel)return vReceta();
+  const chips=['Todas','Favoritas',...RCATS];
+  return `<h3 style="margin-top:6px">Recetario · ${RB.length} recetas</h3>
+  <input id="rs" type="search" placeholder="Busca plato o ingrediente" value="${rquery.replace(/"/g,'&quot;')}" autocomplete="off">
+  <div class="chips scroll">${chips.map(c=>`<button class="chip ${c===rcat?'on':''}" data-rc="${c}">${c}</button>`).join('')}</div>
+  <div id="rl">${rcards()}</div>
+  <p style="font-size:13px;color:var(--mute)">Recetas escritas para cocina normal: olla, sartén, horno y batidora. Calorías aproximadas por ración.</p>`;
+}
+function vReceta(){
+  const r=RB.find(x=>x.id===rsel),sc=rsc(r,rsrv),fav=ls.get('mc_fav',[]).includes(r.id),inl=ls.get('mc_rlist',[]).some(x=>x.id===r.id);
+  return `<button class="ghost" data-rback="1">‹ Recetario</button>
+  <h3 style="font-size:26px;line-height:1.15;margin:14px 0 4px">${r.n}</h3>
+  <p style="margin:0;color:var(--mute)">${r.c} · ${r.m} min · ${r.k} kcal por ración</p>
+  <div class="tip"><b>Menaje:</b> ${r.u}</div>
+  ${r.fx?`<p style="margin:0 0 8px">Receta para un molde: salen ${r.b} raciones.</p>`:`<div class="srv"><span>Raciones</span><button class="x" data-rs="-1" aria-label="Menos">−</button><b>${rsrv}</b><button class="x" data-rs="1" aria-label="Más">+</button></div>`}
+  <div class="sec">Ingredientes</div>
+  ${r.i.map(([q,u,n])=>`<div class="row"><div class="t"><span style="color:var(--ink)">${n}</span><span>${rq(adj(q*sc,u,n),u)}</span></div></div>`).join('')}
+  <p style="color:var(--mute);font-size:14px">Y sal, y lo que tengas de despensa.</p>
+  <button class="go big" data-rcook="1">Cocinar paso a paso</button>
+  <div style="display:flex;gap:8px"><button class="ghost" style="flex:1" data-rfav="1">${fav?'★ Favorita':'☆ Favorita'}</button><button class="ghost" style="flex:1" data-radd="1">${inl?'✓ En tu lista':'+ A la compra'}</button></div>
+  <div class="sec">Pasos</div>
+  <ol class="steps">${r.p.map(([t,s])=>`<li>${rtext(r,t,sc)}${s?` <small style="color:var(--mute)">(${Math.round(s/60)} min)</small>`:''}</li>`).join('')}</ol>`;
+}
+function rShop(){
+  const L=ls.get('mc_rlist',[]);if(!L.length)return '';
+  const chk=ls.get('mc_rchk',[]),agg={};
+  L.forEach(({id,s})=>{const r=RB.find(x=>x.id===id);if(!r)return;const sc=rsc(r,s);
+    r.i.forEach(([q,u,n])=>{const k=n+'|'+u;agg[k]=agg[k]||{n,u,q:0};agg[k].q+=q*sc})});
+  const items=Object.entries(agg).sort((a,b)=>a[1].n.localeCompare(b[1].n));
+  return `<h3>Compra de recetas</h3>
+  <p style="margin:0;color:var(--mute)">${L.map(({id,s})=>{const r=RB.find(x=>x.id===id);return `${r.n} (${r.fx?r.b:s}) <button class="mini" data-rdel="${id}" aria-label="Quitar ${r.n}">✕</button>`}).join(' · ')}</p>`+
+  items.map(([k,v])=>`<button class="item ${chk.includes(k)?'on':''}" data-rk="${k}"><span class="box">${chk.includes(k)?'✓':''}</span><span class="nm">${v.n}</span><span class="q">${v.u==='pizca'?'un poco':rq(['ud','diente','hoja'].includes(v.u)?Math.ceil(v.q-1e-9):v.q,v.u)}</span></button>`).join('')+
+  `<button class="ghost" id="rclear">Vaciar lista de recetas</button>`;
+}
+function openRB(){
+  const r=RB.find(x=>x.id===rsel),sc=rsc(r,rsrv);
+  openFlow({title:r.n,steps:r.p.map(([t,s])=>({h:'',t:rtext(r,t,sc),s})),ingList:r.i.map(([q,u,n],k)=>({k:r.id+k,label:n,q:rq(adj(q*sc,u,n),u)})),meta:`${r.fx?r.b:rsrv} raciones · ${r.k} kcal/ración`});
+}
+
+function vCompra(){
+  const on=ls.get('mc_buy_'+wk(),[]);const secs=[...new Set(Object.values(ING).map(v=>v.s))];
+  const n=on.length,t=Object.keys(ING).length;
+  return rShop()+`<h3>Lista de la compra del menú · ${eur(COMPRA)}</h3><p style="margin:0;color:var(--mute)">Para 1 persona, 14 platos. ${n} de ${t} en el carro. Es la misma lista todas las semanas.</p>
+  <div class="bar"><i style="width:${n/t*100}%"></i></div>`+
+  secs.map(s=>`<div class="sec">${s}</div>`+Object.entries(ING).filter(([,v])=>v.s===s).map(([id,v])=>
+    `<button class="item ${on.includes(id)?'on':''}" data-b="${id}"><span class="box">${on.includes(id)?'✓':''}</span><span class="nm">${v.n}</span><span class="q">${v.b}<br>${EST[id]?'≈ ':''}${eur(PR[id])}</span></button>`).join('')).join('')+
+  `<p style="font-size:13px;color:var(--mute)">Precios de la tienda online de Mercadona, copiados por el comparador Findit (noviembre de 2026). Los marcados con ≈ son estimados. En tu tienda pueden variar unos céntimos; la fruta y la verdura se pesan.</p>`+
+  `<div class="tip"><b>Tienes que tener en casa</b> (≈ ${eur(DESPENSA_SEM)} a la semana): ${ALWAYS}</div>
+   <div class="tip"><b>Al llegar:</b> si compras el sábado, el domingo lo cocinas todo en la pestaña «Domingo». Si compras antes, congela el pollo y la carne hasta el domingo.</div>
+   <button class="ghost" id="reset">Desmarcar todo</button>`;
+}
+
+function vSobras(){
+  const p=plan(wk()),all=[...p.C,...p.N];
+  const rows=Object.entries(ING).map(([id,v])=>{const u=STOCK[id]-p.st[id],pc=Math.round(u/STOCK[id]*100);
+    return {id,v,u,pc,left:p.st[id]}}).sort((a,b)=>a.pc-b.pc);
+  return `<div class="tip">Lo que comes esta semana vale <b>${eur(all.reduce((s,x)=>s+cost(x),0))}</b>, unos <b>${eur(all.reduce((s,x)=>s+cost(x),0)/all.length)}</b> por plato. Lo que sobra (${eur(COMPRA-all.reduce((s,x)=>s+cost(x)-OIL[x.id]*OIL_EUR,0))}) queda para la semana siguiente.</div><h3>Qué se gasta esta semana</h3><p style="margin:0 0 6px;color:var(--mute)">Lo que sobra de despensa (arroz, pasta, patata, ajo) aguanta para la semana siguiente.</p>`+
+  rows.map(r=>`<div class="row"><div class="t"><b style="font-weight:500">${r.v.n}</b><span>${r.left>0.01?'sobra '+qty(r.id,r.left):'se gasta todo'}</span></div><div class="bar"><i style="width:${r.pc}%;${r.v.p?'':'background:var(--mute)'}"></i></div></div>`).join('');
+}
+
+function render(){
+  header();
+  $('#view').innerHTML=tab==='menu'?vMenu():tab==='domingo'?vDomingo():tab==='recetas'?vRecetas():tab==='compra'?vCompra():vSobras();
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+}
+
+// ---------- TEMPORIZADOR ----------
+let T=null,actx=null,wl=null;
+const unlock=()=>{try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume()}catch(e){}};
+const beep=()=>{try{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.3,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.6);o.start();o.stop(actx.currentTime+.6)}catch(e){}try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}};
+const mmss=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function startTimer(sec,label){
+  unlock();stopTimer();
+  const end=Date.now()+sec*1000;$('#tl').textContent=label;$('#timer').classList.add('show');
+  T=setInterval(()=>{const r=Math.max(0,Math.round((end-Date.now())/1000));$('#tt').textContent=mmss(r);
+    if(r===0){$('#timer').classList.add('ring');beep();$('#tstop').textContent='OK'}},500);
+  $('#tt').textContent=mmss(sec);
+}
+function stopTimer(){clearInterval(T);T=null;$('#timer').classList.remove('show','ring');$('#tstop').textContent='Parar'}
+
+// ---------- MODO COCINA ----------
+let C=null;
+function openFlow(o){
+  C=Object.assign({i:o.ingList?-1:0},o);$('#cook').classList.add('open');document.body.style.overflow='hidden';
+  try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wl=w).catch(()=>{})}catch(e){}
+  drawCook();
+}
+function openDish(id,slot){
+  const r=R.find(x=>x.id===id),d=+slot.slice(1),st=store(r,d),b=BC[id];
+  const steps=[];
+  if(st!=='dia')steps.push({h:'Del domingo',t:`Saca el táper «${slotName(slot)} – ${r.n}» de la nevera.${b.m==='full'?'':' Lleva la base hecha.'}`});
+  diaSteps(r).forEach(([t,s])=>steps.push({h:'',t,s}));
+  openFlow({title:r.n,steps,ingList:st==='dia'?Object.entries(r.i).map(([id,q])=>({k:r.id+id,label:ING[id].n,q:qty(id,q)})):null,meta:`1 persona · ${kcal(r)} kcal · ${eur(cost(r))}`,done:()=>{const k='mc_done_'+wk(),a=ls.get(k,[]);if(!a.includes(slot))a.push(slot);ls.set(k,a)}});
+}
+function openSunday(){
+  const S=sunday(),steps=[];
+  steps.push({h:'Antes de empezar',t:`Vas a dejar listos ${S.cook.length} platos en unas ${hm(S.mins)}. Saca ${S.cook.length} tápers, cinta y rotulador para etiquetar.`});
+  if(S.A)steps.push({h:'Arroz para la semana',t:`Pon a cocer ${S.A} g de arroz en una olla grande con agua y sal. Activa el temporizador y sigue con lo siguiente.`,s:1020});
+  if(S.P)steps.push({h:'Pasta para la semana',t:`En otra olla, cuece ${S.P} g de macarrones en agua con sal.`,s:600});
+  if(S.H)steps.push({h:'Huevos duros',t:`Cuece ${S.H} huevos en agua hirviendo. Después, enfríalos en agua fría y guárdalos con cáscara en la nevera.`,s:600});
+  S.cook.forEach((o,k)=>{
+    const h=`${k+1}/${S.cook.length} · ${o.r.n}`;
+    domSteps(o.r).forEach(([t,s])=>steps.push({h,t,s}));
+    const w=store(o.r,o.d);
+    steps.push({h,t:`Al táper. Etiqueta: «${slotName(o.slot)} – ${o.r.n}». Cuando se temple, a ${w==='nevera'?'la nevera':'el congelador'}.`});
+    if(k===0&&(S.A||S.P))steps.push({h:'Arroz y pasta',t:'Escurre el arroz y la pasta. Extiéndelos en una bandeja o plato grande para que se enfríen rápido. Echa un chorrito de aceite a la pasta para que no se pegue.'});
+  });
+  const p=plan(wk()),mon=[p.C[0],p.N[0]].filter(x=>x&&x.i.merluza);
+  steps.push({h:'Para terminar',t:`Nada fuera de la nevera más de 2 horas. Recoge y friega.${mon.length?' Y esta noche pasa la merluza del lunes a la nevera.':''}`});
+  openFlow({title:'Sesión del domingo',steps,done:()=>ls.set('mc_sun_'+wk(),true)});
+}
+function closeCook(){$('#cook').classList.remove('open');document.body.style.overflow='';try{wl&&wl.release()}catch(e){}wl=null;C=null;render()}
+function drawCook(){
+  const n=C.steps.length;$('#cn').textContent=C.title;
+  $('#cp').style.width=((C.i+1)/(n+(C.ingList?1:0))*100)+'%';
+  $('#cprev').style.visibility=C.i<=(C.ingList?-1:0)?'hidden':'visible';
+  if(C.i<0){
+    const got=ls.get('mc_prep',[]);
+    $('#cbody').innerHTML=`<div class="stepn">Antes de empezar · ${C.meta||''}</div><div class="stept">Saca esto y déjalo a mano</div><div class="ings">`+
+      C.ingList.map(o=>`<button class="item ${got.includes(o.k)?'on':''}" data-p="${o.k}"><span class="box">${got.includes(o.k)?'✓':''}</span><span class="nm">${o.label}</span><span class="q">${o.q}</span></button>`).join('')+
+      `</div><p style="color:var(--mute);font-size:15px">Y además: sal y lo básico de despensa.</p>`;
+    $('#cnext').textContent='Empezar';
+  }else{
+    const st=C.steps[C.i];
+    $('#cbody').innerHTML=`<div class="stepn">Paso ${C.i+1} de ${n}${st.h?' · '+st.h:''}</div><div class="stept">${st.t}</div>`+
+      (st.s?`<button class="tbtn" id="tgo">⏱ Temporizador ${mmss(st.s)}</button>`:'');
+    $('#cnext').textContent=C.i===n-1?'Terminado':'Siguiente';
+    if(st.s)$('#tgo').onclick=()=>startTimer(st.s,`Paso ${C.i+1}`);
+  }
+  $('#cbody').scrollTop=0;
+}
+
+// ---------- EVENTOS ----------
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.t){tab=t.dataset.t;render();scrollTo(0,0)}
+  else if(t.dataset.c){unlock();openDish(t.dataset.c,t.dataset.s)}
+  else if(t.id==='sun'){unlock();openSunday()}
+  else if(t.dataset.b){const k='mc_buy_'+wk(),a=ls.get(k,[]),i=a.indexOf(t.dataset.b);i<0?a.push(t.dataset.b):a.splice(i,1);ls.set(k,a);render()}
+  else if(t.dataset.p){const a=ls.get('mc_prep',[]),i=a.indexOf(t.dataset.p);i<0?a.push(t.dataset.p):a.splice(i,1);ls.set('mc_prep',a.slice(-60));drawCook()}
+  else if(t.id==='reset'){ls.set('mc_buy_'+wk(),[]);render()}
+  else if(t.dataset.rc){rcat=t.dataset.rc;render()}
+  else if(t.dataset.r){rsel=t.dataset.r;const r=RB.find(x=>x.id===rsel);rsrv=r.b;render();scrollTo(0,0)}
+  else if(t.dataset.rback){rsel=null;render()}
+  else if(t.dataset.rs){rsrv=Math.min(12,Math.max(1,rsrv+ +t.dataset.rs));render()}
+  else if(t.dataset.rfav){const a=ls.get('mc_fav',[]),i=a.indexOf(rsel);i<0?a.push(rsel):a.splice(i,1);ls.set('mc_fav',a);render()}
+  else if(t.dataset.radd){const a=ls.get('mc_rlist',[]),i=a.findIndex(x=>x.id===rsel);i<0?a.push({id:rsel,s:rsrv}):a[i].s=rsrv;ls.set('mc_rlist',a);render()}
+  else if(t.dataset.rcook){unlock();openRB()}
+  else if(t.dataset.rdel){ls.set('mc_rlist',ls.get('mc_rlist',[]).filter(x=>x.id!==t.dataset.rdel));render()}
+  else if(t.dataset.rk){const a=ls.get('mc_rchk',[]),i=a.indexOf(t.dataset.rk);i<0?a.push(t.dataset.rk):a.splice(i,1);ls.set('mc_rchk',a);render()}
+  else if(t.id==='rclear'){ls.set('mc_rlist',[]);ls.set('mc_rchk',[]);render()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='rs'){rquery=e.target.value;$('#rl').innerHTML=rcards()}});
+$('#pw').onclick=()=>{off--;render()};
+$('#nw').onclick=()=>{off++;render()};
+$('#cx').onclick=closeCook;
+$('#cprev').onclick=()=>{if(C.i>(C.ingList?-1:0)){C.i--;drawCook()}};
+$('#cnext').onclick=()=>{
+  if(C.i<C.steps.length-1){C.i++;drawCook();return}
+  C.done&&C.done();closeCook();
+};
+$('#tstop').onclick=stopTimer;
+render();
+}
+</script>
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
+</body>
+</html>
